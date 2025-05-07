@@ -4,7 +4,7 @@ from helper import get_pg_connection, release_pg_connection
 
 
 async def pg_db_init():
-    conn = None
+    conn = None 
     try:
         conn = await get_pg_connection()
 
