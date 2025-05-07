@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+asyncpg
+python-multipart
+websockets
+wait-for-it

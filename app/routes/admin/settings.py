@@ -1,0 +1,26 @@
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+from pydantic import BaseModel
+from helper import token_generate
+from helper import get_pg_connection, release_pg_connection
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+from typing import Dict, Any
+from helper import get_pg_connection, release_pg_connection
+from settings import SettingsManager
+
+router = APIRouter()
+
+
+
+manager = SettingsManager()
+
+@router.post("/settings/")
+async def update_settings(settings: Dict[str, Any]):
+    for key, value in settings.items():
+        if isinstance(value, (str, int, bool)):
+            await manager.set_setting(key, value)
+        else:
+            return {"error": f"Unsupported value type for key '{key}': {type(value).__name__}"}
+    return {"status": "success"}

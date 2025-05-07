@@ -1,0 +1,6 @@
+.vscode
+pgdata
+.env
+app/__pycache__/
+app/routes/__pycache__/
+app/routes/admin/__pycache__/
