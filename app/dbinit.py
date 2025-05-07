@@ -1,4 +1,5 @@
 import asyncpg
+import os
 from helper import get_pg_connection, release_pg_connection
 
 
@@ -32,9 +33,9 @@ async def pg_db_init():
         # Insert default admin user if not exists
         await conn.execute('''
             INSERT INTO users (username, name, tel, mail, token, password, admin) 
-            VALUES ('admin', 'Administrator', '00000000', 'admin@admin.com', '', '123456', 4)
+            VALUES ('admin', 'Administrator', '00000000', 'admin@admin.com', '', '$1', 4)
             ON CONFLICT (username) DO NOTHING
-        ''')
+        ''', os.getenv("ADMIN_DEFAULT_PASSWORD"))
 
 
         await conn.execute('''

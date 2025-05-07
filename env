@@ -1,0 +1,13 @@
+DOMAIN_NAME= "chat.jowin.at"
+PROTOCOL= "https"
+
+SMTP_HOST= "smtp.gmail.com"
+SMTP_PORT= 465
+MAIL_ADDRESS= "your-mail@gmail.com"
+MAIL_PASSWORD= "gmail-app-password"
+
+POSTGRES_USER= postgres
+POSTGRES_PASSWORD= postgres
+POSTGRES_DB= postgres
+POSTGRES_HOST= db
+POSTGRES_PORT= 5432
