@@ -29,5 +29,5 @@ deploy:
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan jowin.at >> ~/.ssh/known_hosts
   script:
-    - ssh -tt -o StrictHostKeyChecking=no deploy@jowin.at "cd /home/deploy/chat/ &&  docker-compose down &&  docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD &&  docker image rm registry.jowin.at/jowin202/bmeia-monitor:latest -f || true && docker-compose up -d"
+    - ssh -tt -o StrictHostKeyChecking=no deploy@jowin.at "cd /home/deploy/chat/ &&  docker-compose down &&  docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD &&  docker image rm registry.jowin.at/jowin202/webfix:latest -f || true && docker-compose up -d"
       
