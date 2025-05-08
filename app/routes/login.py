@@ -38,7 +38,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                 SET token = $1,
                 last_login = NOW(),
                 last_posted = NOW()
-                WHERE username = $2
+                WHERE LOWER(username) = LOWER($2)
             '''
             await conn.execute(query, token, username)
     except:
