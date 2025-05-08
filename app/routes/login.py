@@ -98,7 +98,7 @@ async def lost_password(username : str, mail : str):
             UPDATE users 
             SET lost_password_token = $1,
             lost_password_token_valid_from = NOW()
-            WHERE username = $2
+            WHERE LOWER(username) = LOWER($2)
         '''
         await conn.execute(query, lost_pass_token, username)
         mail_body = "Hello " + username + "\n\n"
