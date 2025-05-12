@@ -136,14 +136,12 @@ def send_mail(receiver_email, subject, body):
 
 
 def send_fediverse(receiver, text):
-    smtp_server = os.getenv('SMTP_HOST')
-    smtp_port = os.getenv('SMTP_PORT') 
-    sender_email = os.getenv('MAIL_ADDRESS') 
-    sender_password = os.getenv('MAIL_PASSWORD') 
+    access_token = os.getenv('FEDIVERSE_ACCESS_TOKEN')
+    url = os.getenv('FEDIVERSE_URL') 
 
     mastodon = Mastodon(
-        access_token=ACCESS_TOKEN,
-        api_base_url=API_BASE_URL
+        access_token=access_token,
+        api_base_url=url
     )
 
     message = f'{receiver} {text}'
