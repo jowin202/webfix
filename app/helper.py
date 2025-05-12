@@ -9,6 +9,8 @@ import smtplib
 from email.message import EmailMessage
 
 from datetime import datetime
+from mastodon import Mastodon
+
 
 
 def token_generate():
@@ -109,7 +111,6 @@ async def verify_token_admin(request: Request, token: str = Depends(oauth2_schem
 
 
 def send_mail(receiver_email, subject, body):
-    # Email configuration
     smtp_server = os.getenv('SMTP_HOST')
     smtp_port = os.getenv('SMTP_PORT') 
     sender_email = os.getenv('MAIL_ADDRESS') 
@@ -130,3 +131,25 @@ def send_mail(receiver_email, subject, body):
         print("Email sent successfully!")
     except Exception as e:
         print(f"Failed to send email: {e}")
+
+
+
+
+def send_fediverse(receiver, text):
+    smtp_server = os.getenv('SMTP_HOST')
+    smtp_port = os.getenv('SMTP_PORT') 
+    sender_email = os.getenv('MAIL_ADDRESS') 
+    sender_password = os.getenv('MAIL_PASSWORD') 
+
+    mastodon = Mastodon(
+        access_token=ACCESS_TOKEN,
+        api_base_url=API_BASE_URL
+    )
+
+    message = f'{receiver} {text}'
+
+    # Sende Toot mit Sichtbarkeit "direct"
+    mastodon.status_post(
+        message,
+        visibility='direct'
+    )

@@ -3,7 +3,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException,APIRouter, Depends,
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from pydantic import BaseModel
-from helper import token_generate, send_mail
+from helper import token_generate, send_mail, send_fediverse
 from helper import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
@@ -107,6 +107,34 @@ async def lost_password(username : str, mail : str):
         mail_body += os.getenv('PROTOCOL') + "://" + os.getenv("DOMAIN_NAME") + "/recovery/" + lost_pass_token + "/\n\n"
         mail_body += "Kind regards"
         send_mail(mail, "Lost Password", mail_body)
+
+    await release_pg_connection(conn)
+    return True
+
+
+
+
+
+@router.post("/lost_password_fediverse/")
+async def lost_password(username : str, fediverse_id : str):
+    
+    conn = await get_pg_connection() 
+    query = "SELECT id,fediverse_id FROM users WHERE username = $1 AND LOWER(fediverse_id) = LOWER($2)"
+
+    result = await conn.fetchrow(query, username, fediverse_id)
+    
+    if result:
+        lost_pass_token = token_generate()
+        query = '''
+            UPDATE users 
+            SET lost_password_token = $1,
+            lost_password_token_valid_from = NOW()
+            WHERE LOWER(username) = LOWER($2)
+        '''
+        await conn.execute(query, lost_pass_token, username)
+        text = "Hi, Password Recovery Link:"
+        text += os.getenv('PROTOCOL') + "://" + os.getenv("DOMAIN_NAME") + "/recovery/" + lost_pass_token + "/"
+        send_fediverse(fediverse_id, text)
 
     await release_pg_connection(conn)
     return True

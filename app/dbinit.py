@@ -16,7 +16,8 @@ async def pg_db_init():
                 username VARCHAR(20) UNIQUE,
                 name VARCHAR(50),
                 tel VARCHAR(20),
-                mail VARCHAR(50),
+                mail VARCHAR(100),
+                fediverse_id VARCHAR(100),
                 token VARCHAR(66),
                 mail_activate_token VARCHAR(66),
                 lost_password_token VARCHAR(66),
@@ -39,8 +40,8 @@ async def pg_db_init():
 
 
         await conn.execute('''
-            INSERT INTO users (username, name, tel, mail, token, password) 
-            VALUES ('johannes', 'Johannes Winkler', '00000000', 'johannes.w@gmx.at', '', 'abc123')
+            INSERT INTO users (username, name, tel, mail, fediverse_id, token, password) 
+            VALUES ('johannes', 'Johannes Winkler', '00000000', 'johannes.w@gmx.at', '@jowin@pixelfed.graz.social', '', 'abc123')
             ON CONFLICT (username) DO NOTHING
         ''')
 
