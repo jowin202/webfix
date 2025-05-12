@@ -4,4 +4,4 @@ asyncpg
 python-multipart
 websockets
 wait-for-it
-mastodon
+Mastodon.py
