@@ -132,8 +132,8 @@ async def lost_password(username : str, fediverse_id : str):
             WHERE LOWER(username) = LOWER($2)
         '''
         await conn.execute(query, lost_pass_token, username)
-        text = "Hi, Password Recovery Link:"
-        text += os.getenv('PROTOCOL') + "://" + os.getenv("DOMAIN_NAME") + "/recovery/" + lost_pass_token + "/"
+        text = "Hi, Password Recovery Link: "
+        text += os.getenv("DOMAIN_NAME") + "/recovery/" + lost_pass_token + "/"
         send_fediverse(fediverse_id, text)
 
     await release_pg_connection(conn)
