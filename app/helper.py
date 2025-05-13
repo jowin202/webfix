@@ -93,7 +93,7 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
 
 
 async def verify_token_admin(request: Request, token: str = Depends(oauth2_scheme)):
-        conn = await get_pg_connection()
+    conn = await get_pg_connection()
     query = '''
         SELECT id, admin 
         FROM users 
