@@ -68,6 +68,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login/")
 async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     conn = await get_pg_connection()
 
+    client_ip = request.client.host
     ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
     ip_blocked = await conn.fetchval(ip_check_query, client_ip)
     if ip_blocked:
