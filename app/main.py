@@ -60,6 +60,8 @@ async def lifespan(app: FastAPI):
     manager.set_setting_if_not_exists("announcement_team", "Who is online at 9pm?")
     
 
+    yield # this is mandatory
+
 app = FastAPI(title="Webfix API", lifespan=lifespan)
 
 
