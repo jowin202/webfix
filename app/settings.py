@@ -1,6 +1,6 @@
 
 from helper import get_pg_connection, release_pg_connection
-from typing import Union, Literal
+from typing import Union, Literal, List
 
 SettingType = Literal["string", "int", "bool"]
 
@@ -52,16 +52,13 @@ class SettingsManager:
         
     async def set_setting(self, key: str, value: Union[str, int, bool]):
         conn = await get_pg_connection()
-        #try:
-        if True:
+        try:
             if isinstance(value, str):
                 await conn.execute(f"""INSERT INTO settings_str (key, value_str) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_str = EXCLUDED.value_str;""")
             elif isinstance(value, bool):
                 await conn.execute(f"""INSERT INTO settings_bool (key, value_bool) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_bool = EXCLUDED.value_bool;""")
             elif isinstance(value, int):
                 await conn.execute(f"""INSERT INTO settings_int (key, value_int) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_int = EXCLUDED.value_int;""")
-        try:
-            pass
         except:
             pass
         finally:
@@ -71,16 +68,13 @@ class SettingsManager:
 
     async def set_setting_if_not_exists(self, key: str, value: Union[str, int, bool]):
         conn = await get_pg_connection()
-        #try:
-        if True:
+        try:
             if isinstance(value, str):
                 await conn.execute(f"""INSERT INTO settings_str (key, value_str) VALUES ('{key}', '{value}') ON CONFLICT(key) DO NOTHING;""")
             elif isinstance(value, bool):
                 await conn.execute(f"""INSERT INTO settings_bool (key, value_bool) VALUES ('{key}', '{value}') ON CONFLICT(key) DO NOTHING;""")
             elif isinstance(value, int):
                 await conn.execute(f"""INSERT INTO settings_int (key, value_int) VALUES ('{key}', '{value}') ON CONFLICT(key) DO NOTHING;""")
-        try:
-            pass
         except:
             pass
         finally:
