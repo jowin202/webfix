@@ -23,7 +23,8 @@ class SettingsManager:
 
     async def _load_settings(self):
         conn = await get_pg_connection()
-        try:
+        #try:
+        if True:
             rows = await conn.fetch("SELECT key, value_str FROM settings_str")
             self.settings.update({row['key']: row['value_str'] for row in rows})
 
@@ -32,7 +33,8 @@ class SettingsManager:
 
             rows = await conn.fetch("SELECT key, value_bool FROM settings_bool")
             self.settings.update({row['key']:  row['value_bool'] for row in rows})
-
+        try:
+            pass
         except:
             pass
         finally:
@@ -48,13 +50,16 @@ class SettingsManager:
         
     async def set_setting(self, key: str, value: Union[str, int, bool]):
         conn = await get_pg_connection()
-        try:
+        #try:
+        if True:
             if isinstance(value, str):
                 await conn.execute(f"""INSERT INTO settings_str (key, value_str) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_str = EXCLUDED.value_str;""")
             elif isinstance(value, bool):
                 await conn.execute(f"""INSERT INTO settings_bool (key, value_bool) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_bool = EXCLUDED.value_bool;""")
             if isinstance(value, int):
                 await conn.execute(f"""INSERT INTO settings_int (key, value_int) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_int = EXCLUDED.value_int;""")
+        try:
+            pass
         except:
             pass
         finally:
