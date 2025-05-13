@@ -47,24 +47,18 @@ async def lifespan(app: FastAPI):
 
     manager = SettingsManager()
     await manager.initialize()
-    yield
-    pass
 
-    manager.set_setting("allow_guest_login", True)
-    manager.set_setting("activate_timeout", True)
-    manager.set_setting("mandatory_user_verification", False)
+    manager.set_setting_if_not_exists("allow_guest_login", True)
+    manager.set_setting_if_not_exists("activate_timeout", True)
+    manager.set_setting_if_not_exists("mandatory_user_verification", False)
 
-    manager.set_setting("timeout_time", 600)
+    manager.set_setting_if_not_exists("timeout_time", 600)
     
-    manager.set_setting("announcement_general", "Welcome to our chat!")
-    manager.set_setting("announcement_guests", "Please register your username!")
-    manager.set_setting("announcement_registered_users", "Welcome and thanks for registering!")
-    manager.set_setting("announcement_team", "Who is online at 9pm?")
+    manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat!")
+    manager.set_setting_if_not_exists("announcement_guests", "Please register your username!")
+    manager.set_setting_if_not_exists("announcement_registered_users", "Welcome and thanks for registering!")
+    manager.set_setting_if_not_exists("announcement_team", "Who is online at 9pm?")
     
-
-
-
-
 
 app = FastAPI(title="Webfix API", lifespan=lifespan)
 

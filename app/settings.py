@@ -69,3 +69,22 @@ class SettingsManager:
             await release_pg_connection(conn)
 
 
+    async def set_setting_if_not_exists(self, key: str, value: Union[str, int, bool]):
+        conn = await get_pg_connection()
+        #try:
+        if True:
+            if isinstance(value, str):
+                await conn.execute(f"""INSERT INTO settings_str (key, value_str) VALUES ('{key}', '{value}') ON CONFLICT(key) DO NOTHING;""")
+            elif isinstance(value, bool):
+                await conn.execute(f"""INSERT INTO settings_bool (key, value_bool) VALUES ('{key}', '{value}') ON CONFLICT(key) DO NOTHING;""")
+            elif isinstance(value, int):
+                await conn.execute(f"""INSERT INTO settings_int (key, value_int) VALUES ('{key}', '{value}') ON CONFLICT(key) DO NOTHING;""")
+        try:
+            pass
+        except:
+            pass
+        finally:
+            await self._load_settings()
+            await release_pg_connection(conn)
+
+
