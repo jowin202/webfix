@@ -31,7 +31,8 @@ class SettingsManager:
             self.settings.update({row['key']:  row['value_int'] for row in rows})
 
             rows = await conn.fetch("SELECT key, value_bool FROM settings_bool")
-            self.settings.update({row['key']:  row['value_bool'] for row in rows})+
+            self.settings.update({row['key']:  row['value_bool'] for row in rows})
+
         except:
             pass
         finally:
