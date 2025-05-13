@@ -5,3 +5,4 @@ python-multipart
 websockets
 wait-for-it
 Mastodon.py
+fastapi-proxiedheadersmiddleware

@@ -52,21 +52,21 @@ async def pg_db_init():
         # Create settings table
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS settings_str (
-                key VARCHAR(20) UNIQUE,
+                key VARCHAR UNIQUE,
                 value_str VARCHAR
             )
         ''')
 
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS settings_bool (
-                key VARCHAR(20) UNIQUE,
+                key VARCHAR UNIQUE,
                 value_bool BOOL
             )
         ''')
 
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS settings_int (
-                key VARCHAR(20) UNIQUE,
+                key VARCHAR UNIQUE,
                 value_int INT
             )
         ''')

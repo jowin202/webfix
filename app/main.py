@@ -5,6 +5,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import WebSocketDisconnect, Depends
 
+from fastapi_proxiedheadersmiddleware import ProxiedHeadersMiddleware
+
 import os 
 
 from contextlib import asynccontextmanager
@@ -63,6 +65,8 @@ async def lifespan(app: FastAPI):
     yield # this is mandatory
 
 app = FastAPI(title="Webfix API", lifespan=lifespan)
+
+app.add_middleware(ProxiedHeadersMiddleware) # this shows IP addresses behind a reverse proxy
 
 
 

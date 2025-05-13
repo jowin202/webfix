@@ -69,10 +69,9 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     conn = await get_pg_connection()
 
     client_ip = request.client.host
+    print(client_ip,flush=True)
     ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
     ip_blocked = await conn.fetchval(ip_check_query, client_ip)
-    if ip_blocked:
-        raise HTTPException(status_code=403, detail="Your IP is blocked.")
 
     query = '''
         SELECT id 
@@ -82,6 +81,9 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     result = await conn.fetchrow(query, token)
     await release_pg_connection(conn)
 
+    if ip_blocked:
+        raise HTTPException(status_code=403, detail="Your IP is blocked.")
+    
     valid = False
     if result: # todo result as admin
         valid = True
