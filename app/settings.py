@@ -23,8 +23,7 @@ class SettingsManager:
 
     async def _load_settings(self):
         conn = await get_pg_connection()
-        #try:
-        if True:
+        try:
             rows = await conn.fetch("SELECT key, value_str FROM settings_str")
             self.settings.update({row['key']: row['value_str'] for row in rows})
 
@@ -33,10 +32,6 @@ class SettingsManager:
 
             rows = await conn.fetch("SELECT key, value_bool FROM settings_bool")
             self.settings.update({row['key']:  row['value_bool'] for row in rows})
-
-            print(self.settings, flush=True)
-        try:
-            pass
         except:
             pass
         finally:
