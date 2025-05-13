@@ -48,16 +48,16 @@ async def lifespan(app: FastAPI):
     manager = SettingsManager()
     await manager.initialize()
 
-    manager.set_setting_if_not_exists("allow_guest_login", True)
-    manager.set_setting_if_not_exists("activate_timeout", True)
-    manager.set_setting_if_not_exists("mandatory_user_verification", False)
+    await manager.set_setting_if_not_exists("allow_guest_login", True)
+    await manager.set_setting_if_not_exists("activate_timeout", True)
+    await manager.set_setting_if_not_exists("mandatory_user_verification", False)
 
-    manager.set_setting_if_not_exists("timeout_time", 600)
+    await manager.set_setting_if_not_exists("timeout_time", 600)
     
-    manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat!")
-    manager.set_setting_if_not_exists("announcement_guests", "Please register your username!")
-    manager.set_setting_if_not_exists("announcement_registered_users", "Welcome and thanks for registering!")
-    manager.set_setting_if_not_exists("announcement_team", "Who is online at 9pm?")
+    await manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat!")
+    await manager.set_setting_if_not_exists("announcement_guests", "Please register your username!")
+    await manager.set_setting_if_not_exists("announcement_registered_users", "Welcome and thanks for registering!")
+    await manager.set_setting_if_not_exists("announcement_team", "Who is online at 9pm?")
     
 
     yield # this is mandatory
