@@ -24,52 +24,40 @@ class SettingsManager:
     async def _load_settings(self):
         conn = await get_pg_connection()
         try:
-            rows = await conn.fetch("SELECT key, value_str, value_int, value_bool FROM settings")
-            self.settings = {row['key']: {
-                'value_str': row['value_str'],
-                'value_int': row['value_int'],
-                'value_bool': row['value_bool']
-            } for row in rows}
+            rows = await conn.fetch("SELECT key, value_str FROM settings_str")
+            self.settings.update({row['key']: row['value_str'] for row in rows})
+
+            rows = await conn.fetch("SELECT key, value_int FROM settings_int")
+            self.settings.update({row['key']:  row['value_int'] for row in rows})
+
+            rows = await conn.fetch("SELECT key, value_bool FROM settings_bool")
+            self.settings.update({row['key']:  row['value_bool'] for row in rows})+
         except:
             pass
         finally:
             await release_pg_connection(conn)
 
 
-    async def get_setting(self, key: str, value_type: SettingType) -> Union[str, int, bool, None]:
+    async def get_setting(self, key):
         if key not in self.settings:
             return None
-        if value_type is str:
-            return self.settings[key]['value_str']
-        elif value_type is bool:
-            return self.settings[key]['value_bool']
-        elif value_type is int:
-            return self.settings[key]['value_int']
         else:
-            raise ValueError("Unsupported type")
+            return self.settings[key]
 
-        print(self.settings[key],flush=True)
-        #if type_ is bool:
-        #    return self.settings[key]
         
     async def set_setting(self, key: str, value: Union[str, int, bool]):
-        if isinstance(value, str):
-            value_type = "value_str"
-        elif isinstance(value, bool):
-            value_type = "value_bool"
-            value = "true" if value else "false"
-        elif isinstance(value, int):
-            value_type = "value_int"
-        else:
-            raise ValueError("Unsupported type")
-
         conn = await get_pg_connection()
         try:
-            await conn.execute(f"""INSERT INTO settings (key, {value_type}) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET {value_type} = excluded.{value_type}""")
-            await self._load_settings()
+            if isinstance(value, str):
+                await conn.execute(f"""INSERT INTO settings_str (key, value_str) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_str = EXCLUDED.value_str;""")
+            elif isinstance(value, bool):
+                await conn.execute(f"""INSERT INTO settings_bool (key, value_bool) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_bool = EXCLUDED.value_bool;""")
+            if isinstance(value, int):
+                await conn.execute(f"""INSERT INTO settings_int (key, value_int) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_int = EXCLUDED.value_int;""")
         except:
             pass
         finally:
+            await self._load_settings()
             await release_pg_connection(conn)
 
 
