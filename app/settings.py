@@ -33,6 +33,8 @@ class SettingsManager:
 
             rows = await conn.fetch("SELECT key, value_bool FROM settings_bool")
             self.settings.update({row['key']:  row['value_bool'] for row in rows})
+
+            print(self.settings, flush=True)
         try:
             pass
         except:
@@ -56,7 +58,7 @@ class SettingsManager:
                 await conn.execute(f"""INSERT INTO settings_str (key, value_str) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_str = EXCLUDED.value_str;""")
             elif isinstance(value, bool):
                 await conn.execute(f"""INSERT INTO settings_bool (key, value_bool) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_bool = EXCLUDED.value_bool;""")
-            if isinstance(value, int):
+            elif isinstance(value, int):
                 await conn.execute(f"""INSERT INTO settings_int (key, value_int) VALUES ('{key}', '{value}') ON CONFLICT(key) DO UPDATE SET value_int = EXCLUDED.value_int;""")
         try:
             pass
