@@ -4,6 +4,7 @@ services:
   web:
     build: .
     container_name: chat-api
+    restart: always
     ports:
       - "8000:8000"
     depends_on:

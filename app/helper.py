@@ -66,8 +66,13 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login/")
 
 async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
-    
     conn = await get_pg_connection()
+
+    ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
+    ip_blocked = await conn.fetchval(ip_check_query, client_ip)
+    if ip_blocked:
+        raise HTTPException(status_code=403, detail="Your IP is blocked.")
+
     query = '''
         SELECT id 
         FROM users 
@@ -88,12 +93,11 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
 
 
 async def verify_token_admin(request: Request, token: str = Depends(oauth2_scheme)):
-    
-    conn = await get_pg_connection()
+        conn = await get_pg_connection()
     query = '''
         SELECT id, admin 
         FROM users 
-        WHERE token = $1 AND admin > 0
+        WHERE token = $1 AND admin > 2
     '''
     result = await conn.fetchrow(query, token)
     await release_pg_connection(conn)
@@ -107,7 +111,6 @@ async def verify_token_admin(request: Request, token: str = Depends(oauth2_schem
     request.state.user_id = result['id']
     request.state.admin = result['admin']
     return token
-
 
 
 def send_mail(receiver_email, subject, body):
@@ -133,8 +136,6 @@ def send_mail(receiver_email, subject, body):
         print(f"Failed to send email: {e}")
 
 
-
-
 def send_fediverse(receiver, text):
     access_token = os.getenv('FEDIVERSE_ACCESS_TOKEN')
     url = os.getenv('FEDIVERSE_URL') 
@@ -151,3 +152,23 @@ def send_fediverse(receiver, text):
         message,
         visibility='direct'
     )
+
+
+async def block_ip(ip : str):
+    conn = await get_pg_connection()
+    try:
+        await conn.execute("INSERT INTO banned_ips (ip) VALUES ($1) ON CONFLICT (ip) DO NOTHING;", ip)
+    except:
+        pass
+    finally:
+        await release_pg_connection(conn)
+
+
+async def unblock_ip(ip: str):
+    conn = await get_pg_connection()
+    try:
+        await conn.execute("DELETE FROM banned_ips WHERE ip = $1;", ip)
+    except Exception as e:
+        pass
+    finally:
+        await release_pg_connection(conn)

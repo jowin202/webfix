@@ -71,5 +71,14 @@ async def pg_db_init():
             )
         ''')
 
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS banned_ips (
+            id SERIAL PRIMARY KEY,
+            ip INET NOT NULL,
+            time TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)
