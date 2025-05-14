@@ -11,6 +11,10 @@ from email.message import EmailMessage
 from datetime import datetime
 from mastodon import Mastodon
 
+import hmac
+import hashlib
+import base64
+
 
 
 def token_generate():
@@ -68,7 +72,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login/")
 async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     conn = await get_pg_connection()
 
-    client_ip = request.client.host
+    x_forwarded_for = request.headers.get("x-forwarded-for")
+    client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.client.host
+
     print(client_ip,flush=True)
     ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
     ip_blocked = await conn.fetchval(ip_check_query, client_ip)
@@ -175,3 +181,14 @@ async def unblock_ip(ip: str):
         pass
     finally:
         await release_pg_connection(conn)
+
+
+
+
+
+def calc_hmac(message: str) -> str:
+    key_bytes = bytes.fromhex(os.getenv('TOKEN_HMAC_KEY'))
+    message_bytes = message.encode('utf-8')
+    hmac_result = hmac.new(key_bytes, message_bytes, hashlib.sha256).digest()
+    
+    return base64.b64encode(hmac_result).decode('utf-8')

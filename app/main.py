@@ -5,7 +5,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import WebSocketDisconnect, Depends
 
-from fastapi_proxiedheadersmiddleware import ProxiedHeadersMiddleware
+
+
 
 import os 
 
@@ -52,7 +53,7 @@ async def lifespan(app: FastAPI):
 
     await manager.set_setting_if_not_exists("allow_guest_login", True)
     await manager.set_setting_if_not_exists("activate_timeout", True)
-    await manager.set_setting_if_not_exists("mandatory_user_verification", False)
+    await manager.set_setting_if_not_exists("mandatory_user_verification", True)
 
     await manager.set_setting_if_not_exists("timeout_time", 600)
     
@@ -65,12 +66,6 @@ async def lifespan(app: FastAPI):
     yield # this is mandatory
 
 app = FastAPI(title="Webfix API", lifespan=lifespan)
-
-app.add_middleware(ProxiedHeadersMiddleware) # this shows IP addresses behind a reverse proxy
-
-
-
-
 
 
 @app.post("/exit")

@@ -13,14 +13,16 @@ async def pg_db_init():
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
-                username VARCHAR(20) UNIQUE,
+                username VARCHAR(20) UNIQUE NOT NULL,
+                username_html VARCHAR GENERATED ALWAYS AS ('<b>' || username || '</b>') STORED,
                 name VARCHAR(50),
                 tel VARCHAR(20),
                 mail VARCHAR(100),
                 fediverse_id VARCHAR(100),
                 token VARCHAR(66),
-                mail_activate_token VARCHAR(66),
-                lost_password_token VARCHAR(66),
+                is_activated BOOL NOT NULL DEFAULT true,
+                activation_token VARCHAR,
+                lost_password_token VARCHAR,
                 lost_password_token_valid_from TIMESTAMP,
                 password VARCHAR(32),
                 online_time INT DEFAULT 0,
@@ -39,11 +41,11 @@ async def pg_db_init():
         ''', os.getenv("ADMIN_DEFAULT_PASSWORD"))
 
 
-        await conn.execute('''
-            INSERT INTO users (username, name, tel, mail, fediverse_id, token, password) 
-            VALUES ('johannes', 'Johannes Winkler', '00000000', 'johannes.w@gmx.at', '@jowin@pixelfed.graz.social', '', 'abc123')
-            ON CONFLICT (username) DO NOTHING
-        ''')
+        #await conn.execute('''
+        #    INSERT INTO users (username, name, tel, mail, fediverse_id, token, password) 
+        #    VALUES ('johannes', 'Johannes Winkler', '00000000', 'johannes.w@gmx.at', '@jowin@pixelfed.graz.social', '', 'abc123')
+        #    ON CONFLICT (username) DO NOTHING
+        #''')
 
 
 
