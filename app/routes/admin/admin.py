@@ -1,0 +1,39 @@
+from fastapi import APIRouter
+from io import BytesIO
+from helper import token_generate
+from helper import get_pg_connection, release_pg_connection
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+from typing import Dict, Any, List
+from helper import get_pg_connection, release_pg_connection
+from settings import SettingsManager
+
+router = APIRouter()
+
+
+
+manager = SettingsManager()
+
+
+
+
+# also check activate account method in login
+@router.post("/admin_activate_account/")
+async def admin_activate_account(username : str):
+    conn = await get_pg_connection() 
+    status = True
+    query = '''
+        UPDATE users
+        SET is_activated = true, activation_token = NULL
+        WHERE username = $1;
+    '''
+    try:
+        await conn.execute(query, username)
+    except:
+        status = False
+    finally:
+        await release_pg_connection(conn)
+    return status
+
+
+

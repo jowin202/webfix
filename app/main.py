@@ -117,6 +117,7 @@ from routes import login
 from routes import pwmanage
 from routes import toplist
 from routes.admin import settings
+from routes.admin import admin
 
 
 app.include_router(input.router, tags=["input"], prefix="/api/input", dependencies=[Depends(verify_token)])
@@ -125,7 +126,8 @@ app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
 app.include_router(toplist.router, tags=["toplist"], prefix="/api/toplist")
 
 
-app.include_router(settings.router, tags=["admin"], prefix="/api/admin", dependencies=[Depends(verify_token_admin)])
+app.include_router(settings.router, tags=["settings"], prefix="/api/settings", dependencies=[Depends(verify_token_admin)])
+app.include_router(admin.router, tags=["admin"], prefix="/api/admin", dependencies=[Depends(verify_token_admin)])
 
 # Mount the "static" directory to serve HTML/CSS/JS
 app.mount("/static", StaticFiles(directory="static"), name="static")

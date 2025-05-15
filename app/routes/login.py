@@ -160,7 +160,7 @@ async def register_user(username : str, name : str, tel : str, mail : str, fediv
 
 
 
-
+# also check admin activate account method in admin/admin
 @router.post("/activate_account/")
 async def activate_account(activation_token : str):
     conn = await get_pg_connection() 
