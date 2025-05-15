@@ -56,6 +56,7 @@ async def lifespan(app: FastAPI):
     await manager.set_setting_if_not_exists("mandatory_user_verification", True)
 
     await manager.set_setting_if_not_exists("timeout_time", 600)
+    await manager.set_setting_if_not_exists("pw_recovery_token_valid_time", 600)
     
     await manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat!")
     await manager.set_setting_if_not_exists("announcement_guests", "Please register your username!")
@@ -113,12 +114,14 @@ async def notify_ws(args, websocket: WebSocket):
 
 from routes import input
 from routes import login
+from routes import pwmanage
 from routes import toplist
 from routes.admin import settings
 
 
 app.include_router(input.router, tags=["input"], prefix="/api/input", dependencies=[Depends(verify_token)])
 app.include_router(login.router, tags=["login"], prefix="/api/login")
+app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
 app.include_router(toplist.router, tags=["toplist"], prefix="/api/toplist")
 
 
