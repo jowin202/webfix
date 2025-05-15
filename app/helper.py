@@ -75,7 +75,6 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     x_forwarded_for = request.headers.get("x-forwarded-for")
     client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.client.host
 
-    print(client_ip,flush=True)
     ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
     ip_blocked = await conn.fetchval(ip_check_query, client_ip)
 

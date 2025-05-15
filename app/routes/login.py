@@ -3,7 +3,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException,APIRouter, Depends,
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from pydantic import BaseModel
-from helper import token_generate, send_mail, send_fediverse, calc_hmac
+from helper import token_generate, send_mail, send_fediverse, calc_hmac, verify_token
 from helper import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
@@ -42,7 +42,8 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                     UPDATE users 
                     SET token = $1,
                     last_login = NOW(),
-                    last_posted = NOW()
+                    last_posted = NOW(),
+                    login_count = login_count+1
                     WHERE LOWER(username) = LOWER($2)
                 '''
                 await conn.execute(query, token, username)
@@ -79,7 +80,28 @@ async def get_user(token: str):
 async def logout_token(token : str):
     
     conn = await get_pg_connection() 
-    query = "UPDATE users SET token = '' WHERE token = $1"
+    query = '''
+        UPDATE users 
+        SET token = '',
+        last_posted = NULL
+        WHERE token = $1
+    '''
+    await conn.execute(query, token)
+    await release_pg_connection(conn)
+    
+    return True
+
+
+@router.get("/logout/")
+async def logout(token: str = Depends(verify_token)):
+    
+    conn = await get_pg_connection() 
+    query = '''
+        UPDATE users 
+        SET token = '',
+        last_posted = NULL
+        WHERE token = $1
+    '''
     await conn.execute(query, token)
     await release_pg_connection(conn)
     
@@ -160,10 +182,25 @@ async def activate_account(activation_token : str):
 
 @router.get("/login_page/")
 async def login_page_info():
-    return {"online_names": ["Chatter 1", "Chatter 2", "Chatter 3"], 
+
+    online_list = []
+    try:
+        # todo visible
+        # todo channels
+        conn = await get_pg_connection() 
+        data = await conn.fetch("SELECT username FROM users WHERE token != ''")
+        online_list = [record['username'] for record in data]
+    except:
+        pass
+    finally:
+        if conn:
+            await release_pg_connection(conn)
+
+
+    return {"online_names": online_list, 
             "allow_guest_login": await manager.get_setting("allow_guest_login"), 
             "display_online": True, 
-            "number_online": 3, 
+            "number_online": len(online_list), 
             "show_rooms": True, 
             "rooms": ["Hauptchat", "Nebenchat"]
             }

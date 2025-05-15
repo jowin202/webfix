@@ -29,6 +29,7 @@ async def pg_db_init():
                 created TIMESTAMP DEFAULT NOW(),
                 last_posted TIMESTAMP,
                 last_login TIMESTAMP,
+                login_count INT DEFAULT 0,
                 admin INT NOT NULL DEFAULT 0 
             )
         ''')
