@@ -1,6 +1,6 @@
 import asyncpg
 import os
-from helper import get_pg_connection, release_pg_connection
+from helper import get_pg_connection, release_pg_connection, calc_hmac
 
 
 
@@ -24,7 +24,7 @@ async def pg_db_init():
                 activation_token VARCHAR,
                 lost_password_token VARCHAR,
                 lost_password_token_valid_from TIMESTAMP,
-                password VARCHAR(32),
+                password VARCHAR NOT NULL,
                 online_time INT DEFAULT 0,
                 created TIMESTAMP DEFAULT NOW(),
                 last_posted TIMESTAMP,
@@ -38,7 +38,7 @@ async def pg_db_init():
             INSERT INTO users (username, name, tel, mail, token, password, admin) 
             VALUES ('admin', 'Administrator', '00000000', 'admin@admin.com', '', $1, 4)
             ON CONFLICT (username) DO NOTHING
-        ''', os.getenv("ADMIN_DEFAULT_PASSWORD"))
+        ''', calc_hmac(os.getenv("ADMIN_DEFAULT_PASSWORD")))
 
 
         #await conn.execute('''

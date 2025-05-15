@@ -187,7 +187,7 @@ async def unblock_ip(ip: str):
 
 
 def calc_hmac(message: str) -> str:
-    key_bytes = bytes.fromhex(os.getenv('TOKEN_HMAC_KEY'))
+    key_bytes = bytes.fromhex(os.getenv('HMAC_KEY'))
     message_bytes = message.encode('utf-8')
     hmac_result = hmac.new(key_bytes, message_bytes, hashlib.sha256).digest()
     

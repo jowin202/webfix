@@ -21,32 +21,34 @@ manager = SettingsManager()
 @router.post("/")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     username = form_data.username
-    password = form_data.password
+    password = calc_hmac(form_data.password)
     valid = False
     token = token_generate()
-    # todo hashing
     
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT password, admin 
+            SELECT password, is_activated, admin 
             FROM users 
             WHERE LOWER(username) = LOWER($1)
         '''
         result = await conn.fetchrow(query, username)
 
-        if result and result['password'] == password:
-            valid = True
-            query = '''
-                UPDATE users 
-                SET token = $1,
-                last_login = NOW(),
-                last_posted = NOW()
-                WHERE LOWER(username) = LOWER($2)
-            '''
-            await conn.execute(query, token, username)
+
+        if not await manager.get_setting("mandatory_user_verification") or result['is_activated']:
+            if result and result['password'] == password:
+                valid = True
+                query = '''
+                    UPDATE users 
+                    SET token = $1,
+                    last_login = NOW(),
+                    last_posted = NOW()
+                    WHERE LOWER(username) = LOWER($2)
+                '''
+                await conn.execute(query, token, username)
+        
     except:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+        valid = False
     finally:
         if conn:
             await release_pg_connection(conn)
@@ -55,7 +57,6 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     if not valid:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
-    #send_mail("johannes.w@gmx.at", "Test Mail", "Hallo\nEs scheint zu funktionieren." + username)
     return {"access_token": token, "admin": result['admin'], "token_type": "bearer"}
 
 
@@ -146,11 +147,8 @@ async def lost_password(username : str, fediverse_id : str):
 
 
 
-
-
-
 @router.post("/recover_password/")
-async def lost_password(lost_pass_token : str, new_password : str):
+async def recover_password(lost_pass_token : str, new_password : str):
     if new_password == "" or lost_pass_token == "": 
         return True
     
@@ -173,10 +171,9 @@ async def lost_password(lost_pass_token : str, new_password : str):
 
 
 @router.post("/register/")
-async def register_user(username : str, name : str, tel : str, mail : str, fediverse_id : str, password : str):
+async def register_user(username : str, name : str, tel : str, mail : str, fediverse_id : str, password : str, verify_mail : bool, verify_fediverse : bool):
 
     conn = await get_pg_connection() 
-
     verification = await manager.get_setting("mandatory_user_verification")
 
 
@@ -187,27 +184,27 @@ async def register_user(username : str, name : str, tel : str, mail : str, fediv
             await conn.execute('''
                 INSERT INTO users (username, name, tel, mail, fediverse_id, password, token, is_activated, activation_token) 
                 VALUES ($1,$2,$3,$4,$5,$6,'', false, $7)
-            ''', username, name, tel, mail, fediverse_id, password, activation_token
+            ''', username, name, tel, mail, fediverse_id, calc_hmac(password), activation_token
             )
 
+            if verify_mail:
+                mail_body = "Hello " + name + "\n\n"
+                mail_body += "Welcome to the chat.\n"
+                mail_body += "To activate your account, please click the link below or paste it into your browser:\n\n"
+                mail_body += os.getenv('PROTOCOL') + "://" + os.getenv("DOMAIN_NAME") + "/activate/" + activation_token + "/\n\n"
+                mail_body += "Kind regards"
+                send_mail(mail, "Activate your account", mail_body)
 
-            mail_body = "Hello " + name + "\n\n"
-            mail_body += "Welcome to the chat.\n"
-            mail_body += "To activate your account, please click the link below or paste it into your browser:\n\n"
-            mail_body += os.getenv('PROTOCOL') + "://" + os.getenv("DOMAIN_NAME") + "/activate/" + activation_token + "/\n\n"
-            mail_body += "Kind regards"
-            send_mail(mail, "Activate your account", mail_body)
-
-
-            text = "Hi, Activation Link: "
-            text += os.getenv("DOMAIN_NAME") + "/activate/" + activation_token + "/"
-            send_fediverse(fediverse_id, text)
+            if verify_fediverse:
+                text = "Hi, Activation Link: "
+                text += os.getenv("DOMAIN_NAME") + "/activate/" + activation_token + "/"
+                send_fediverse(fediverse_id, text)
 
         else:
             await conn.execute('''
                 INSERT INTO users (username, name, tel, mail, fediverse_id, password, token) 
                 VALUES ($1,$2,$3,$4,$5,$6,'')
-            ''', username, name, tel, mail, fediverse_id, password
+            ''', username, name, tel, mail, fediverse_id, calc_hmac(password)
             )
 
 
@@ -227,7 +224,7 @@ async def activate_account(activation_token : str):
 
     query = '''
         UPDATE users
-        SET is_activated = true, activation_token = ''
+        SET is_activated = true, activation_token = NULL
         WHERE activation_token = $1;
     '''
     try:
@@ -242,4 +239,13 @@ async def activate_account(activation_token : str):
 
 @router.get("/login_page/")
 async def login_page_info():
-    return {"online_names": ["Chatter 1", "Chatter 2", "Chatter 3"], "guest_login": True, "display_online": True, "number_online": 3, "show_rooms": True, "rooms": ["Hauptchat", "Nebenchat"]}
+    return {"online_names": ["Chatter 1", "Chatter 2", "Chatter 3"], 
+            "allow_guest_login": await manager.get_setting("allow_guest_login"), 
+            "display_online": True, 
+            "number_online": 3, 
+            "show_rooms": True, 
+            "rooms": ["Hauptchat", "Nebenchat"]
+            }
+
+
+
