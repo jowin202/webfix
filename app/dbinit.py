@@ -30,6 +30,7 @@ async def pg_db_init():
                 last_posted TIMESTAMP,
                 last_login TIMESTAMP,
                 login_count INT DEFAULT 0,
+                remove_on_logout BOOL DEFAULT false,
                 admin INT NOT NULL DEFAULT 0 
             )
         ''')

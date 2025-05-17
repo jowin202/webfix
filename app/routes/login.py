@@ -61,6 +61,57 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     return {"access_token": token, "admin": result['admin'], "token_type": "bearer"}
 
 
+
+
+
+@router.post("/guest_login")
+async def login(username : str):
+    valid = True
+    token = token_generate()
+    
+    try:
+        # check if user exists
+        conn = await get_pg_connection()
+        query = '''
+            SELECT 1
+            FROM users 
+            WHERE LOWER(username) = LOWER($1)
+        '''
+        result = await conn.fetchrow(query, username)
+
+        # check if user exists
+        if result is not None:
+            valid = False
+
+        if not await manager.get_setting("allow_guest_login"):
+            valid = False
+        
+
+        # create temp user
+        if valid:
+            await conn.execute('''
+                INSERT INTO users (username, token, password, is_activated, remove_on_logout) 
+                VALUES ($1, $2, '', true, true)
+                ON CONFLICT (username) DO NOTHING
+            ''', username, token)
+
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        valid = False
+    finally:
+        if conn:
+            await release_pg_connection(conn)
+
+    if not valid:
+        raise HTTPException(status_code=400, detail="Guest Login Error")
+    return {"access_token": token, "token_type": "bearer"}
+
+
+
+
+
+
 @router.get("/from_token/{token}/")
 async def get_user(token: str):
 
@@ -87,6 +138,15 @@ async def logout_token(token : str):
         WHERE token = $1
     '''
     await conn.execute(query, token)
+
+    # cleanup guests
+    query = '''
+        DELETE FROM users
+        WHERE remove_on_logout = true
+        AND token = '';
+    '''
+    await conn.execute(query)
+    
     await release_pg_connection(conn)
     
     return True
@@ -103,6 +163,14 @@ async def logout(token: str = Depends(verify_token)):
         WHERE token = $1
     '''
     await conn.execute(query, token)
+
+    # cleanup guests
+    query = '''
+        DELETE FROM users
+        WHERE remove_on_logout = true
+        AND token = '';
+    '''
+    await conn.execute(query)
     await release_pg_connection(conn)
     
     return True
