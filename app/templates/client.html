@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Test</title>
+</head>
+<body>
+  <h1>WebSocket Listener</h1>
+  <div id="messages"></div>
+
+  <script>
+    const token = "{{ token }}"; // Jinja2 injects the token here
+    const ws = new WebSocket(`/ws2?token=${token}`);
+
+    ws.onmessage = function(event) {
+      const msg = document.createElement("p");
+      msg.textContent = "" + event.data;
+      document.getElementById("messages").appendChild(msg);
+    };
+
+    ws.onopen = function() {
+      console.log("WebSocket connected.");
+    };
+
+    ws.onclose = function() {
+      console.log("WebSocket disconnected.");
+    };
+  </script>
+</body>
+</html>

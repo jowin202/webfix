@@ -15,7 +15,7 @@ CHANNEL = "mynotifications"
 
 
 @router.post("/")
-async def send_notification(message: str, request: Request):
+async def write_text(message: str, request: Request):
     conn = await get_pg_connection()
     query = """
         SELECT username, last_posted
@@ -37,3 +37,47 @@ async def send_notification(message: str, request: Request):
     await conn.execute(f"NOTIFY {CHANNEL}, '{result['username']}: {message}'")
     await release_pg_connection(conn)
     return {"status": "notification sent", "message": message}
+
+
+
+@router.post("/wh")
+async def whisper(to_username: str, message: str, request: Request):
+    from_name = ""
+    to_id = -1
+
+    conn = await get_pg_connection()
+    query = """
+        SELECT username, last_posted
+        FROM users 
+        WHERE id = $1
+    """
+    result = await conn.fetchrow(query, request.state.user_id)
+    from_name = result['username']
+
+    query = """
+        UPDATE users
+        SET online_time = online_time + EXTRACT(EPOCH FROM (NOW() - last_posted))::int,
+        last_posted = NOW()
+        WHERE id = $1
+    """
+    await conn.execute(query, request.state.user_id)
+
+
+    query = """
+        SELECT id
+        FROM users 
+        WHERE username = $1
+    """
+    result = await conn.fetchrow(query, to_username)
+    try:
+        to_id = result['id']
+        await conn.execute(f"NOTIFY whisper_{to_id}, '{from_name} whispers: {message}'")
+    except:
+        pass
+    finally:
+        await release_pg_connection(conn)
+    
+    # todo error message
+    return {"status": "notification sent", "message": message}
+
+
