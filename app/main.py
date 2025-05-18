@@ -260,6 +260,6 @@ async def read_index():
 
 templates = Jinja2Templates(directory="templates")
 
-@app.get("/test/{token}", response_class=HTMLResponse)
+@app.get("/test/{token}/", response_class=HTMLResponse)
 async def test_minimal_frontend(request: Request, token : str):
     return templates.TemplateResponse("client.html", {"request": request, "token": token})

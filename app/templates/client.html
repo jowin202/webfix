@@ -2,19 +2,33 @@
 <html>
 <head>
   <title>WebSocket Test</title>
+
+  <style>
+  #messages {
+    max-height: calc(100vh - 150px); /* adjust as needed */
+    overflow-y: auto;
+    padding: 10px;
+  }
+</style>
 </head>
 <body>
   <h1>WebSocket Listener</h1>
-  <div id="messages"></div>
+  <div id="messages" style="margin-bottom: 60px;"></div> <!-- leave room for input -->
+
+  <form id="inputForm" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #f9f9f9; padding: 10px;">
+    <input type="text" id="userInput" placeholder="Type a message and press Enter" style="width: 90%;" autocomplete="off">
+    <input type="submit" value="Send" style="display: none;">
+  </form>
 
   <script>
-    const token = "{{ token }}"; // Jinja2 injects the token here
+    const token = "{{ token }}"; 
     const ws = new WebSocket(`/ws2?token=${token}`);
 
     ws.onmessage = function(event) {
       const msg = document.createElement("p");
       msg.textContent = "" + event.data;
       document.getElementById("messages").appendChild(msg);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     };
 
     ws.onopen = function() {
@@ -24,6 +38,32 @@
     ws.onclose = function() {
       console.log("WebSocket disconnected.");
     };
+
+
+
+    document.getElementById("inputForm").addEventListener("submit", function(e) {
+      e.preventDefault(); // prevent form submission
+
+      const message = document.getElementById("userInput").value.trim();
+      if (!message) return;
+
+      fetch(`/api/input/?message=${encodeURIComponent(message)}`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: ''
+      }).then(response => {
+        if (!response.ok) {
+          console.error('Request failed:', response.statusText);
+        }
+      }).catch(err => {
+        console.error('Fetch error:', err);
+      });
+
+      document.getElementById("userInput").value = '';
+    });
   </script>
 </body>
 </html>
