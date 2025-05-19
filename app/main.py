@@ -9,13 +9,10 @@ from fastapi.templating import Jinja2Templates
 
 from routes.login import logout_token
 
-
 import os 
 
 from contextlib import asynccontextmanager
 from datetime import datetime
-
-
 
 from helper import get_pg_connection, initialize_connection_pool, release_pg_connection, verify_token, verify_token_admin
 from dbinit import pg_db_init
@@ -23,12 +20,7 @@ from dbinit import pg_db_init
 from settings import SettingsManager
 
 
-
-
 CHANNEL = "mynotifications"
-
-
-
 
 
 # Database config
@@ -39,10 +31,6 @@ DB_CONFIG = {
     "host": os.getenv('POSTGRES_HOST', 'localhost'),
     "port": os.getenv('POSTGRES_PORT', 5432) 
 }
-
-
-
-
 
 
 @asynccontextmanager
@@ -105,34 +93,6 @@ async def timeout_check():
 
 
 
-
-
-
-
-# WebSocket endpoint that listens for PostgreSQL NOTIFY messages
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    await websocket.send_text('{"cat": "statusmsg", "msg": "stream opened"}')
-    conn = await asyncpg.connect(**DB_CONFIG)
-    await conn.add_listener(CHANNEL, lambda *args: asyncio.create_task(notify_ws(args, websocket)))
-
-
-    try:
-        while True:
-            # Wait for any message or ping to keep the connection alive
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        print("WebSocket disconnected")
-    except Exception as e:
-        print("WebSocket error:", e)
-    finally:
-        print("Cleaning up...",flush=True)
-        await conn.remove_listener(CHANNEL, notify_ws)
-        await conn.close()
-
-
-
 @app.websocket("/ws2")
 async def websocket_endpoint(websocket: WebSocket):
     token = websocket.query_params.get("token")
@@ -173,8 +133,6 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         await release_pg_connection(conn)
 
-
-
     await websocket.accept()
     await websocket.send_text(f'{{"cat": "statusmsg", "msg": "stream opened for {username}, id: {id}"}}')
 
@@ -209,7 +167,6 @@ async def notify_ws(args, websocket: WebSocket):
     await websocket.send_text(payload)
 
 
-
 async def notify_ws_w(args, websocket: WebSocket):
     _, pid, channel, payload = args
     if payload == 'exit':
@@ -220,10 +177,9 @@ async def notify_ws_w(args, websocket: WebSocket):
 
 
 
-
-
 from routes import input
 from routes import login
+from routes import register
 from routes import pwmanage
 from routes import toplist
 from routes.admin import settings
@@ -232,6 +188,7 @@ from routes.admin import admin
 
 app.include_router(input.router, tags=["input"], prefix="/api/input", dependencies=[Depends(verify_token)])
 app.include_router(login.router, tags=["login"], prefix="/api/login")
+app.include_router(register.router, tags=["register"], prefix="/api/register")
 app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
 app.include_router(toplist.router, tags=["toplist"], prefix="/api/toplist")
 
@@ -242,10 +199,10 @@ app.include_router(admin.router, tags=["admin"], prefix="/api/admin", dependenci
 # Mount the "static" directory to serve HTML/CSS/JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/", response_class=HTMLResponse)
-async def read_index():
-    with open("static/client.html", "r") as f:
-        return f.read() 
+#@app.get("/", response_class=HTMLResponse)
+#async def read_index():
+#    with open("static/index.html", "r") as f:
+#        return f.read() 
     
 
 templates = Jinja2Templates(directory="templates")

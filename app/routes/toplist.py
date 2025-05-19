@@ -10,9 +10,6 @@ from helper import get_pg_connection, release_pg_connection
 
 router = APIRouter()
 
-
-
-
 @router.get("/")
 async def get_toplist():
 
