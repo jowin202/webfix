@@ -113,7 +113,7 @@ async def login(username : str):
 
 
 @router.get("/from_token/{token}/")
-async def get_user(token: str):
+async def login_with_token(token: str):
 
     conn = await get_pg_connection() 
     query = "SELECT username, admin FROM users WHERE token = $1"
@@ -127,6 +127,7 @@ async def get_user(token: str):
 
 
 
+# this is also for timeout, no addition to online time
 @router.get("/logout_token/{token}/")
 async def logout_token(token : str):
     
