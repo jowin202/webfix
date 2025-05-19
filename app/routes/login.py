@@ -136,8 +136,10 @@ async def logout_token(token : str):
         SET token = '',
         last_posted = NULL
         WHERE token = $1
+        RETURNING id
     '''
-    await conn.execute(query, token)
+    user_id = await conn.fetchval(query, token)
+    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
 
     # cleanup guests
     query = '''
@@ -161,8 +163,10 @@ async def logout(token: str = Depends(verify_token)):
         SET token = '',
         last_posted = NULL
         WHERE token = $1
+        RETURNING id
     '''
-    await conn.execute(query, token)
+    user_id = await conn.fetchval(query, token)
+    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
 
     # cleanup guests
     query = '''
