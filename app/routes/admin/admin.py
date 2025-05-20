@@ -42,7 +42,7 @@ async def admin_activate_account(username : str):
 
 @router.post("/reset_database/")
 async def reset_database():
-    pg_db_init()
-    pg_db_remove()
-
+    await pg_db_remove()
+    await pg_db_init()
+    return True
 

@@ -7,6 +7,7 @@ from helper import token_generate, send_mail, send_fediverse, calc_hmac, verify_
 from helper import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
+import json
 
 from settings import SettingsManager
 
@@ -45,6 +46,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                 await conn.execute(query, token, username)
                 
                 # logout if logged in
+                await conn.execute(f"NOTIFY whisper_{user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login'})}'")
                 await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
     except:
         valid = False
@@ -93,8 +95,7 @@ async def login(username : str):
             ''', username, token)
 
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except:
         valid = False
     finally:
         if conn:

@@ -96,9 +96,9 @@ async def pg_db_remove():
     try:
         await conn.execute('''DROP TABLE users''')
         await conn.execute('''DROP TABLE settings_str''')
-        await conn.execute('''DROP TABLE IF NOT EXISTS settings_bool ''')
-        await conn.execute('''DROP TABLE IF NOT EXISTS settings_int''')
-        await conn.execute('''DROP TABLE IF NOT EXISTS banned_ips''')
+        await conn.execute('''DROP TABLE settings_bool ''')
+        await conn.execute('''DROP TABLE settings_int''')
+        await conn.execute('''DROP TABLE banned_ips''')
 
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)

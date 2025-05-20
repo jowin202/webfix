@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from routes.login import logout_token
 
 import os 
+import json
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -126,6 +127,12 @@ async def websocket_endpoint(websocket: WebSocket):
         if ip_blocked:
             valid = False
             message = "IP blocked"
+
+
+        if valid:
+
+            await conn.execute(f"NOTIFY whisper_{id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login'})}'")
+            await conn.execute(f"NOTIFY whisper_{id}, 'exit'")
 
 
     except Exception as e:
