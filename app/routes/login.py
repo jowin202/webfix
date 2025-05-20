@@ -43,22 +43,18 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                     WHERE LOWER(username) = LOWER($2)
                 '''
                 await conn.execute(query, token, username)
-        
+                
+                # logout if logged in
+                await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
     except:
         valid = False
     finally:
         if conn:
             await release_pg_connection(conn)
 
-
-
-
     if not valid:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
-
-    # logout if logged in
-    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
     return {"access_token": token, "admin": result['admin'], "token_type": "bearer"}
 
 
