@@ -51,6 +51,10 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
             await release_pg_connection(conn)
 
 
+
+    # logout if logged in
+    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
+
     if not valid:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
@@ -117,7 +121,6 @@ async def logout_token(token : str):
         RETURNING id
     '''
     user_id = await conn.fetchval(query, token)
-    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
 
     # cleanup guests
     query = '''
@@ -126,6 +129,9 @@ async def logout_token(token : str):
         AND token = '';
     '''
     await conn.execute(query)
+
+    # first logout, then close stream
+    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
     await release_pg_connection(conn)   
     return True
 

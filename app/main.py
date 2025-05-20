@@ -199,10 +199,10 @@ app.include_router(admin.router, tags=["admin"], prefix="/api/admin", dependenci
 # Mount the "static" directory to serve HTML/CSS/JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-#@app.get("/", response_class=HTMLResponse)
-#async def read_index():
-#    with open("static/index.html", "r") as f:
-#        return f.read() 
+@app.get("/", response_class=HTMLResponse)
+async def read_index():
+    with open("static/index.html", "r") as f:
+        return f.read() 
     
 
 templates = Jinja2Templates(directory="templates")
