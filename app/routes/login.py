@@ -24,12 +24,12 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT password, is_activated, admin 
+            SELECT id, password, is_activated, admin 
             FROM users 
             WHERE LOWER(username) = LOWER($1)
         '''
         result = await conn.fetchrow(query, username)
-
+        user_id = result['id']
 
         if not await manager.get_setting("mandatory_user_verification") or result['is_activated']:
             if result and result['password'] == password:
@@ -52,12 +52,13 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
 
 
-    # logout if logged in
-    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
 
     if not valid:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
+
+    # logout if logged in
+    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
     return {"access_token": token, "admin": result['admin'], "token_type": "bearer"}
 
 

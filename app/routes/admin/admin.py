@@ -8,6 +8,8 @@ from typing import Dict, Any, List
 from helper import get_pg_connection, release_pg_connection
 from settings import SettingsManager
 
+from dbinit import pg_db_init, pg_db_remove
+
 router = APIRouter()
 
 
@@ -35,5 +37,12 @@ async def admin_activate_account(username : str):
         await release_pg_connection(conn)
     return status
 
+
+
+
+@router.post("/reset_database/")
+async def reset_database():
+    pg_db_init()
+    pg_db_remove()
 
 

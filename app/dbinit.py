@@ -5,10 +5,8 @@ from helper import get_pg_connection, release_pg_connection, calc_hmac
 
 
 async def pg_db_init():
-    conn = None 
+    conn = await get_pg_connection() 
     try:
-        conn = await get_pg_connection()
-
         # Create users table
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -87,3 +85,23 @@ async def pg_db_init():
 
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)
+    finally:
+        if conn:
+            await release_pg_connection(conn)
+
+
+
+async def pg_db_remove():
+    conn = await get_pg_connection() 
+    try:
+        await conn.execute('''DROP TABLE users''')
+        await conn.execute('''DROP TABLE settings_str''')
+        await conn.execute('''DROP TABLE IF NOT EXISTS settings_bool ''')
+        await conn.execute('''DROP TABLE IF NOT EXISTS settings_int''')
+        await conn.execute('''DROP TABLE IF NOT EXISTS banned_ips''')
+
+    except Exception as e:
+        print(f"An error occurred: {e}",flush=True)
+    finally:
+        if conn:
+            await release_pg_connection(conn)
