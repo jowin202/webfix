@@ -1,0 +1,22 @@
+<div class="chat-container">
+  <div class="chat-window">
+    <div class="messages">
+      <div *ngFor="let message of messages" class="message">
+        <strong>{{ message.sender }}:</strong> {{ message.text }}
+      </div>
+    </div>
+    <input
+      [(ngModel)]="currentMessage"
+      (keyup.enter)="sendMessage()"
+      placeholder="Nachricht eingeben..."
+      class="message-input"
+    />
+  </div>
+
+  <div class="user-list">
+    <h3>Online</h3>
+    <ul>
+      <li *ngFor="let user of onlineUsers">{{ user }}</li>
+    </ul>
+  </div>
+</div>
