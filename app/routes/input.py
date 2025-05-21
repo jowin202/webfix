@@ -33,8 +33,13 @@ async def write_text(message: str, request: Request):
     """
     await conn.execute(query, request.state.user_id)
 
-    
-    await conn.execute(f"NOTIFY {CHANNEL}, $1",json.dumps({"username": result['username'], "message": message}))
+    payload = json.dumps({
+    "username": result['username'],
+    "message": message
+    })
+    quoted_payload = await conn.fetchval("SELECT quote_literal($1)", payload)
+    await conn.execute(f"NOTIFY {CHANNEL}, {quoted_payload}")
+
     await release_pg_connection(conn)
     return {"status": "notification sent", "message": message}
 
