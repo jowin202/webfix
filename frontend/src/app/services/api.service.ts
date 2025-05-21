@@ -176,11 +176,11 @@ export class ApiService {
 
 
 
-  connect(url: string, auth_token?: string): Observable<any> {
+  connect_stream(url: string, auth_token?: string): Observable<any> {
     return new Observable((observer: Observer<any>) => {
       // Authentifizierung über Query-Parameter (alternativ: Header über Server-seitige Lösung)
       const wsUrl = auth_token ? `${url}?token=${auth_token}` : url;
-
+      
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {

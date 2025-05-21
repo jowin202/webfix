@@ -1,0 +1,13 @@
+{
+  "/api": {
+    "target": "https://chat.jowin.at",
+    "secure": true,
+    "changeOrigin": true
+  },
+  "/ws2": {
+    "target": "https://chat.jowin.at",
+    "ws": true,
+    "secure": true,
+    "changeOrigin": true
+  }
+}

@@ -7,6 +7,7 @@ from helper import token_generate
 from helper import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+import json
 
 router = APIRouter()
 
@@ -33,8 +34,7 @@ async def write_text(message: str, request: Request):
     await conn.execute(query, request.state.user_id)
 
     
-
-    await conn.execute(f"NOTIFY {CHANNEL}, '{result['username']}: {message}'")
+    await conn.execute(f"NOTIFY {CHANNEL}, $1",json.dumps({"username": result['username'], "message": message}))
     await release_pg_connection(conn)
     return {"status": "notification sent", "message": message}
 

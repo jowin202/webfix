@@ -6,10 +6,9 @@
       </div>
     </div>
     <input
-      [(ngModel)]="currentMessage"
-      (keyup.enter)="sendMessage()"
+      (keyup.enter)="sendMessage(inputField.value); inputField.value='';"
       placeholder="Nachricht eingeben..."
-      class="message-input"
+      class="message-input" #inputField
     />
   </div>
 

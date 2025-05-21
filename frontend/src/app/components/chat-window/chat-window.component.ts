@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { WebSocketSubject } from 'rxjs/webSocket';
+import { ApiService } from '../../services/api.service';
+import { Observable } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-chat-window',
@@ -10,35 +12,25 @@ import { WebSocketSubject } from 'rxjs/webSocket';
   styleUrl: './chat-window.component.scss'
 })
 export class ChatWindowComponent implements OnInit, OnDestroy{
-  
-  private socket$!: WebSocketSubject<any>;
-  messages: { sender: string; text: string }[] = [];
-  onlineUsers: string[] = [];
-  currentMessage = '';
+  constructor (public api : ApiService, public auth : AuthService){}
+
+  onlineUsers = ["Johannes", "Matthias"]
+  messages = [{"sender": "Hugo", "text": "Hallo, wie gehts?"}]
 
   ngOnInit() {
-    this.socket$ = new WebSocketSubject('ws://localhost:3000');
-
-    this.socket$.subscribe((msg) => {
-      if (msg.type === 'message') {
-        this.messages.push({ sender: msg.sender, text: msg.text });
-      } else if (msg.type === 'userList') {
-        this.onlineUsers = msg.users;
-      }
+    this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
+      console.log(result);
     });
   }
 
-  sendMessage() {
-    if (this.currentMessage.trim()) {
-      this.socket$.next({
-        type: 'message',
-        text: this.currentMessage
-      });
-      this.currentMessage = '';
-    }
+  sendMessage(message : string) {
+    this.api.post(`/api/input/?message=${encodeURIComponent(message)}`, this.auth.token, {})
+        .subscribe(result => {
+          //console.log('Server response:', result);
+        });
   }
 
   ngOnDestroy() {
-    this.socket$.complete();
+
   }
 }
