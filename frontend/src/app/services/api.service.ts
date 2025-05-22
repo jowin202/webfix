@@ -184,7 +184,7 @@ export class ApiService {
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
-        console.log('WebSocket connection opened');
+        //console.log('WebSocket connection opened');
       };
 
       socket.onmessage = (event) => {

@@ -171,13 +171,18 @@ async def websocket_endpoint(websocket: WebSocket):
 
 async def notify_ws(args, websocket: WebSocket):
     _, pid, channel, payload = args
-    await websocket.send_text(payload)
-
+    try:
+        await websocket.send_text(payload)
+    except:
+        pass
 
 async def notify_ws_w(args, websocket: WebSocket):
     _, pid, channel, payload = args
     if payload == 'exit':
-        await websocket.send_text('{"cat": "statusmsg", "msg": "stream closed"}')
+        try:
+            await websocket.send_text('{"cat": "statusmsg", "msg": "stream closed"}')
+        except:
+            pass
         await websocket.close()
     else:
         await websocket.send_text(payload)
