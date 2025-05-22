@@ -71,6 +71,53 @@ export class AuthService {
   }
 
 
+  do_guest_login(username: string, remember: boolean): void {
+    const headers = new HttpHeaders({
+      'accept': 'application/json',
+    });
+
+    this.http.post(`/api/login/guest_login/?username=${encodeURIComponent(username)}`, {}, { headers: headers }).pipe(
+      map((response: any) => {
+        if (this.isJson(response)) {
+          return response;
+        } else {
+          throw new Error('Response is not a valid JSON.');
+        }
+      }),
+      catchError((error: any) => {
+        if (error.status === 400) {
+          this.password_error = true;
+          console.error('Unauthorized access. Please login.');
+          return []
+        }
+        return [];
+      })
+
+    ).subscribe((response) => {
+      if ("access_token" in response) {
+        this.admin_level = 0; //response['admin']; //guest is never admin
+        this.token = response['access_token'];
+        this.username = username;
+        this.logged_in = true;
+        this.init = true;
+
+        console.log("hahaha")
+        if (typeof localStorage !== "undefined" && localStorage !== null) {
+          if (remember)
+            localStorage.setItem("token", response['access_token']);
+          else
+            localStorage.setItem("token", "");
+        }
+
+        if (typeof sessionStorage !== "undefined" && sessionStorage !== null) {
+          sessionStorage.setItem("token", response['access_token']);
+        }
+
+      }
+    });
+  }
+
+
 
 
 

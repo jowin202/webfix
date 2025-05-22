@@ -63,7 +63,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
 
 
-@router.post("/guest_login")
+@router.post("/guest_login/")
 async def login(username : str):
     valid = True
     token = token_generate()

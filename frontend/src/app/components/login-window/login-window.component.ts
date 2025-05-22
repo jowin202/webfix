@@ -18,6 +18,6 @@ export class LoginWindowComponent {
   }
 
   do_guest_login(value : any){
-
+    this.auth.do_guest_login(value.guestName, false);
   }
 }
