@@ -1,13 +1,11 @@
 {
   "/api": {
-    "target": "https://chat.jowin.at",
-    "secure": true,
-    "changeOrigin": true
+    "target": "http://localhost:8000",
+    "secure": false
   },
   "/ws2": {
-    "target": "https://chat.jowin.at",
+    "target": "http://localhost:8000",
     "ws": true,
-    "secure": true,
-    "changeOrigin": true
+    "secure": false
   }
 }

@@ -106,6 +106,32 @@ async def login(username : str):
     return {"access_token": token, "token_type": "bearer"}
 
 
+
+
+# this is also for timeout, no addition to online time
+@router.get("/from_token/{token}/")
+async def login_token(token : str):
+    
+    conn = await get_pg_connection() 
+    query = '''
+        SELECT id, username, admin 
+        FROM users
+        WHERE token = $1
+    '''
+    row = await conn.fetchrow(query, token)
+
+    # no double login check because stream is doing it 
+    await release_pg_connection(conn)
+
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    username = row['username'] if isinstance(row, dict) and "username" in row else ""
+    admin = row['admin'] if isinstance(row,dict) and "admin" in row else ""
+    return { "username" : username, "admin": admin}
+
+
+
 # this is also for timeout, no addition to online time
 @router.get("/logout_token/{token}/")
 async def logout_token(token : str):
