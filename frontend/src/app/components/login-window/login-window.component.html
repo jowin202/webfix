@@ -17,16 +17,19 @@
       </div>
 
       <button class="login-button" (click)="do_page_login(form.value);">Login</button>
-      <div class="separator">or</div>
+    </form>
 
+    <div class="separator">or</div>
+
+    <form #form1="ngForm">
       <!-- Guest login -->
       <div class="form-group">
         <label for="guestName">Guest Name</label>
         <input type="text" id="guestName" class="input-field" name="guestName" ngModel/>
       </div>
-      <button class="guest-button" (click)="do_guest_login(form.value)">Continue as Guest</button>
+      <button class="guest-button" (click)="do_guest_login(form1.value)">Continue as Guest</button>
 
-      <div class="online-count">🟢 13 users online</div>
     </form>
+    <div class="online-count">🟢 13 users online</div>
   </div>
 </div>
