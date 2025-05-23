@@ -28,7 +28,7 @@ async def pg_db_init():
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(20) UNIQUE NOT NULL,
-                username_html VARCHAR GENERATED ALWAYS AS ('<b>' || username || '</b>') STORED,
+                username_html VARCHAR,
                 name VARCHAR(50),
                 tel VARCHAR(20),
                 mail VARCHAR(100),

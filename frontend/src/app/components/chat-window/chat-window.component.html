@@ -2,7 +2,7 @@
   <div class="chat-window">
     <div class="messages" #messagesContainer>
       <div *ngFor="let message of messages" class="message">
-        <strong>{{ message.username }}:</strong>&nbsp;<span [innerHTML]="message.message"></span>
+        <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
       </div>
     </div>
     <input

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from pydantic import BaseModel
@@ -7,6 +7,8 @@ from helper import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from helper import get_pg_connection, release_pg_connection
+
+import re
 
 router = APIRouter()
 
@@ -53,4 +55,53 @@ async def get_channel_by_id():
 
     return result
 
-    
+
+@router.post("/change_name_color/{fromhex}/{tohex}/")
+async def set_name_color(fromhex: str, tohex: str, request: Request):
+    # Validate hex color format
+    if not re.fullmatch(r"[0-9a-fA-F]{6}", fromhex) or not re.fullmatch(r"[0-9a-fA-F]{6}", tohex):
+        raise HTTPException(status_code=400, detail="Hex color codes must be 6-digit hexadecimal strings.")
+
+    # Convert hex to RGB
+    def hex_to_rgb(hex_str):
+        return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
+
+    # Convert RGB to hex
+    def rgb_to_hex(rgb):
+        return ''.join(f"{c:02x}" for c in rgb)
+
+    # Interpolate color between start and end
+    def interpolate_color(start, end, factor):
+        return tuple(int(start[i] + (end[i] - start[i]) * factor) for i in range(3))
+
+    # Apply gradient to username
+    def apply_gradient(username, fromhex, tohex):
+        start_rgb = hex_to_rgb(fromhex)
+        end_rgb = hex_to_rgb(tohex)
+        result = ""
+        length = len(username)
+        for i, char in enumerate(username):
+            factor = i / max(length - 1, 1)
+            color = interpolate_color(start_rgb, end_rgb, factor)
+            hex_color = rgb_to_hex(color)
+            result += f'<font color="#{hex_color}">{char}</font>'
+        return "<b>" + result + "</b>"
+
+    # DB logic
+    conn = await get_pg_connection()
+    try:
+        query = "SELECT username FROM users WHERE id = $1"
+        result = await conn.fetchrow(query, request.state.user_id)
+
+        if not result:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        username = result["username"]
+        username_html = apply_gradient(username, fromhex, tohex)
+
+        update_query = "UPDATE users SET username_html = $1 WHERE id = $2"
+        await conn.execute(update_query, username_html, request.state.user_id)
+
+        return {"success": True}
+    finally:
+        await release_pg_connection(conn)
