@@ -15,7 +15,7 @@
   <div class="user-list">
     <h3>Online</h3>
     <ul>
-      <li *ngFor="let user of onlineUsers">{{ user }}</li>
+      <li *ngFor="let user of onlineUsers"><span [innerHTML]="user.username_html"></span></li>
     </ul>
   </div>
 </div>

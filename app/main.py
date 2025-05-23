@@ -205,7 +205,7 @@ from routes import input
 from routes import login
 from routes import register
 from routes import pwmanage
-from routes import toplist
+from routes import data
 from routes.admin import settings
 from routes.admin import admin
 
@@ -214,7 +214,7 @@ app.include_router(input.router, tags=["input"], prefix="/api/input", dependenci
 app.include_router(login.router, tags=["login"], prefix="/api/login")
 app.include_router(register.router, tags=["register"], prefix="/api/register")
 app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
-app.include_router(toplist.router, tags=["toplist"], prefix="/api/toplist")
+app.include_router(data.router, tags=["data"], prefix="/api/data", dependencies=[Depends(verify_token)])
 
 
 app.include_router(settings.router, tags=["settings"], prefix="/api/settings", dependencies=[Depends(verify_token_admin)])

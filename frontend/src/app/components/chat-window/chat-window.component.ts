@@ -11,6 +11,11 @@ interface ChatMessage {
   message: string;
 }
 
+interface OnlineUsers {
+  username: string;
+  username_html: string;
+}
+
 
 @Component({
   selector: 'app-chat-window',
@@ -22,9 +27,8 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
   constructor (public api : ApiService, public auth : AuthService){}
 
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
-  onlineUsers = ["Johannes", "Matthias"]
 
-  
+  onlineUsers : OnlineUsers[] = []
   messages : ChatMessage[] = []
 
   ngOnInit() {
@@ -41,6 +45,12 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
         this.messages.push({username: "Announcement", "message" : "<i>" + result['msg'] + "</i>"})
       }
     });
+
+    
+    this.api.get("/api/data/online_by_id/" + this.auth.channel_id + "/", this.auth.token)
+        .subscribe(result => {
+          this.onlineUsers = result
+        });
   }
 
   sendMessage(message : string) {
