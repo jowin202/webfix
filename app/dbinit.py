@@ -7,7 +7,23 @@ from helper import get_pg_connection, release_pg_connection, calc_hmac
 async def pg_db_init():
     conn = await get_pg_connection() 
     try:
-        # Create users table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS channels (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR UNIQUE
+            )
+        ''')
+        
+        await conn.execute('''
+            INSERT INTO channels (id,name) VALUES (1,'Main Channel')
+            ON CONFLICT (name) DO NOTHING;
+        ''')
+
+        await conn.execute('''
+            INSERT INTO channels (id,name) VALUES (2,'Secondary Channel')
+            ON CONFLICT (name) DO NOTHING;
+        ''')
+
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -30,7 +46,9 @@ async def pg_db_init():
                 login_count INT DEFAULT 0,
                 remove_on_logout BOOL DEFAULT false,
                 visible BOOL DEFAULT true,
-                admin INT NOT NULL DEFAULT 0 
+                admin INT NOT NULL DEFAULT 0,
+                channel_id INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE RESTRICT
             )
         ''')
         
@@ -94,6 +112,7 @@ async def pg_db_init():
 async def pg_db_remove():
     conn = await get_pg_connection() 
     try:
+        await conn.execute('''DROP TABLE channels''')
         await conn.execute('''DROP TABLE users''')
         await conn.execute('''DROP TABLE settings_str''')
         await conn.execute('''DROP TABLE settings_bool ''')

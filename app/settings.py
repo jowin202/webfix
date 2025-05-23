@@ -9,6 +9,7 @@ class SettingsManager:
     _initialized = False
 
     settings = {}
+    html_names = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -32,6 +33,9 @@ class SettingsManager:
 
             rows = await conn.fetch("SELECT key, value_bool FROM settings_bool")
             self.settings.update({row['key']:  row['value_bool'] for row in rows})
+
+            rows = await conn.fetch("SELECT username,username_html FROM users")
+            self.html_names.update({row['username']:  row['username_html'] for row in rows})
         except:
             pass
         finally:
@@ -76,4 +80,20 @@ class SettingsManager:
             await self._load_settings()
             await release_pg_connection(conn)
 
+
+    async def get_username_html(self, username):
+        if username not in self.settings:
+            return username
+        else:
+            return self.html_names[username]
+
+    async def set_username_html(self, username: str, value: str):
+        conn = await get_pg_connection()
+        try:
+            await conn.execute(f"""INSERT INTO users (username, username_html) VALUES ('{username}', '{value}') ON CONFLICT(key) DO UPDATE SET username_html = EXCLUDED.username_html;""")
+        except:
+            pass
+        finally:
+            await self._load_settings()
+            await release_pg_connection(conn)
 
