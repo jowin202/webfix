@@ -109,8 +109,7 @@ async def websocket_endpoint(websocket: WebSocket):
             FROM users 
             WHERE token = $1 
         '''
-        result = await conn.fetchrow(query, token)
-        #print(result['username'], flush=True)        
+        result = await conn.fetchrow(query, token) 
         if result:
             valid = True
             username = result['username']
@@ -130,13 +129,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
         if valid:
-
             await conn.execute(f"NOTIFY whisper_{id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login'})}'")
             await conn.execute(f"NOTIFY whisper_{id}, 'exit'")
-
-
     except Exception as e:
         print("exception: " + str(e), flush=True)
+        await websocket.close() # this only happen if error
+        return # quit here
     finally:
         await release_pg_connection(conn)
 
@@ -146,7 +144,6 @@ async def websocket_endpoint(websocket: WebSocket):
     if not valid:
         await websocket.send_text(f'{{"cat": "statusmsg", "msg": "{message}"}}')
         await websocket.close()
-        print(message,flush=True)
         return
 
 
