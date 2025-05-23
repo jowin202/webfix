@@ -36,6 +36,10 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
       {
         this.messages.push({username: "ChatBot", "message" : "<i>" + result['msg'] + "</i>"})
       }
+      else if ("cat" in result && result['cat'] == "announcement" && "msg" in result)
+      {
+        this.messages.push({username: "Announcement", "message" : "<i>" + result['msg'] + "</i>"})
+      }
     });
   }
 

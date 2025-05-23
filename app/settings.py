@@ -42,7 +42,7 @@ class SettingsManager:
             await release_pg_connection(conn)
 
 
-    async def get_setting(self, key):
+    def get_setting(self, key):
         if key not in self.settings:
             return None
         else:

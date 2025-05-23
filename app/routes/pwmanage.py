@@ -90,7 +90,7 @@ async def recover_password(lost_pass_token : str, new_password : str):
         AND EXTRACT(EPOCH FROM (NOW() - lost_password_token_valid_from)) <= $3;
     '''
     try:
-        await conn.execute(query, calc_hmac(new_password), lost_pass_token, await manager.get_setting("pw_recovery_token_valid_time"))
+        await conn.execute(query, calc_hmac(new_password), lost_pass_token, manager.get_setting("pw_recovery_token_valid_time"))
     except:
         pass
     finally:

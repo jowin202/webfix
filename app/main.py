@@ -49,9 +49,9 @@ async def lifespan(app: FastAPI):
     await manager.set_setting_if_not_exists("timeout_time", 180)
     await manager.set_setting_if_not_exists("pw_recovery_token_valid_time", 600)
     
-    await manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat!")
-    await manager.set_setting_if_not_exists("announcement_guests", "Please register your username!")
-    await manager.set_setting_if_not_exists("announcement_registered_users", "Welcome and thanks for registering!")
+    await manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat, $USER! ")
+    await manager.set_setting_if_not_exists("announcement_guests", "Hello $USER, Please register your username!")
+    await manager.set_setting_if_not_exists("announcement_registered_users", "Welcome and thanks for registering, $USER!")
     await manager.set_setting_if_not_exists("announcement_team", "Who is online at 9pm?")
     
 
@@ -67,7 +67,7 @@ async def timeout_check():
     while True:
         conn = await get_pg_connection()
         
-        result = await conn.fetch("""SELECT id, username, token, NOW()-last_posted AS diff FROM users WHERE last_posted IS NOT NULL AND last_posted < NOW() - ($1 || ' seconds')::interval AND token != '' """, str(await manager.get_setting("timeout_time")))
+        result = await conn.fetch("""SELECT id, username, token, NOW()-last_posted AS diff FROM users WHERE last_posted IS NOT NULL AND last_posted < NOW() - ($1 || ' seconds')::interval AND token != '' """, str(manager.get_setting("timeout_time")))
         for row in result:
             msg = '{"cat": "statusmsg", "msg": "Timeout"}'
             await conn.execute(f"NOTIFY whisper_{row['id']}, '{msg}' ")
@@ -80,12 +80,12 @@ async def timeout_check():
             WHERE token != ''
             AND last_posted IS NOT NULL
             AND last_posted + ($1 || ' seconds')::interval > NOW()
-                                           """, str(await manager.get_setting("timeout_time")))
+                                           """, str(manager.get_setting("timeout_time")))
         
         if row and row['remaining']:
             refresh_intervall = int(row['remaining'].total_seconds())+5 # 5 sec tolerance for testing
         else:
-            refresh_intervall = int(await manager.get_setting("timeout_time")/2)  # or 0 or some fallback
+            refresh_intervall = int(manager.get_setting("timeout_time")/2)  # or 0 or some fallback
 
         # print(refresh_intervall, flush=True)
         await release_pg_connection(conn)
@@ -102,10 +102,11 @@ async def websocket_endpoint(websocket: WebSocket):
     message = ""
     username = ""
     id = -1
+    is_guest = False
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT id, username
+            SELECT id, username,remove_on_logout
             FROM users 
             WHERE token = $1 
         '''
@@ -114,6 +115,7 @@ async def websocket_endpoint(websocket: WebSocket):
             valid = True
             username = result['username']
             id = int(result['id'])
+            is_guest = True if result['remove_on_logout'] else False
         else:
             message = "Unknown token"
         
@@ -153,6 +155,19 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
     try:
+        manager = SettingsManager()
+        announcement =  manager.get_setting("announcement_general").replace("$USER", username)
+        announcement_guests =  manager.get_setting("announcement_guests").replace("$USER", username)
+        announcement_registered =  manager.get_setting("announcement_registered_users").replace("$USER", username)
+
+        if announcement and announcement != "":
+            await websocket.send_text(f'{{"cat": "announcement", "msg": "{announcement}"}}')
+
+        if is_guest and announcement_guests and announcement_guests != "":
+            await websocket.send_text(f'{{"cat": "announcement", "msg": "{announcement_guests}"}}')
+        elif announcement_registered and announcement_registered != "":
+            await websocket.send_text(f'{{"cat": "announcement", "msg": "{announcement_registered}"}}')
+            
         while True:
             # Wait for any message or ping to keep the connection alive
             await websocket.receive_text()

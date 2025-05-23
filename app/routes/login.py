@@ -32,7 +32,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         result = await conn.fetchrow(query, username)
         user_id = result['id']
 
-        if not await manager.get_setting("mandatory_user_verification") or result['is_activated']:
+        if not manager.get_setting("mandatory_user_verification") or result['is_activated']:
             if result and result['password'] == password:
                 valid = True
                 query = '''
@@ -82,7 +82,7 @@ async def login(username : str):
         if result is not None:
             valid = False
 
-        if not await manager.get_setting("allow_guest_login"):
+        if not manager.get_setting("allow_guest_login"):
             valid = False
         
 
