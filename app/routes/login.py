@@ -89,8 +89,8 @@ async def login(username : str):
         # create temp user
         if valid:
             await conn.execute('''
-                INSERT INTO users (username, token, password,  created, last_posted, is_activated, remove_on_logout) 
-                VALUES ($1, $2, '', NOW(), NOW(), true, true)
+                INSERT INTO users (username, username_html, token, password,  created, last_posted, is_activated, remove_on_logout) 
+                VALUES ($1, '<b>' || $1::varchar || '</b>', $2, '', NOW(), NOW(), true, true)
                 ON CONFLICT (username) DO NOTHING
             ''', username, token)
 

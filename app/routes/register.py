@@ -19,14 +19,14 @@ manager = SettingsManager()
 @router.post("/register/")
 async def register_user(username : str, name : str, tel : str, mail : str, fediverse_id : str, password : str, verify_mail : bool, verify_fediverse : bool):
     conn = await get_pg_connection() 
-    verification = await manager.get_setting("mandatory_user_verification")
+    verification = manager.get_setting("mandatory_user_verification")
     try:
         if verification:
 
             activation_token = token_generate()
             await conn.execute('''
-                INSERT INTO users (username, name, tel, mail, fediverse_id, password, token, is_activated, activation_token) 
-                VALUES ($1,$2,$3,$4,$5,$6,'', false, $7)
+                INSERT INTO users (username, username_html, name, tel, mail, fediverse_id, password, token, is_activated, activation_token) 
+                VALUES ($1,'<b>' || $1::varchar || '</b>',$2,$3,$4,$5,$6,'', false, $7)
             ''', username, name, tel, mail, fediverse_id, calc_hmac(password), activation_token
             )
 
@@ -45,8 +45,8 @@ async def register_user(username : str, name : str, tel : str, mail : str, fediv
 
         else:
             await conn.execute('''
-                INSERT INTO users (username, name, tel, mail, fediverse_id, password, token) 
-                VALUES ($1,$2,$3,$4,$5,$6,'')
+                INSERT INTO users (username, username_html, name, tel, mail, fediverse_id, password, token) 
+                VALUES ($1,'<b>' || $1::varchar || '</b>',$2,$3,$4,$5,$6,'')
             ''', username, name, tel, mail, fediverse_id, calc_hmac(password)
             )
 

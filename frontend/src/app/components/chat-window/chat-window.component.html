@@ -2,7 +2,15 @@
   <div class="chat-window">
     <div class="messages" #messagesContainer>
       <div *ngFor="let message of messages" class="message">
-        <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+        <div *ngIf="message.cat == 'default'">
+          <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+        </div>
+        <div *ngIf="message.cat == 'statusmsg'">
+          <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+        </div>
+        <div *ngIf="message.cat == 'announcement'">
+          <span [innerHTML]="message.message"></span>
+        </div>
       </div>
     </div>
     <input

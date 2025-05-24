@@ -54,8 +54,8 @@ async def pg_db_init():
         
         # Insert default admin user if not exists
         await conn.execute('''
-            INSERT INTO users (username, name, tel, mail, token, password, admin) 
-            VALUES ('admin', 'Administrator', '00000000', 'admin@admin.com', '', $1, 4)
+            INSERT INTO users (username, username_html, name, tel, mail, token, password, admin) 
+            VALUES ('admin', '<b>admin</b>', 'Administrator', '00000000', 'admin@admin.com', '', $1, 4)
             ON CONFLICT (username) DO NOTHING
         ''', calc_hmac(os.getenv("ADMIN_DEFAULT_PASSWORD")))
 

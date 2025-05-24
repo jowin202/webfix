@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 
 
 interface ChatMessage {
+  cat: string;
   username: string;
   message: string;
 }
@@ -34,24 +35,31 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
   ngOnInit() {
     this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
       if ("username" in result && "message" in result){
+        result['cat'] = "default"
         this.messages.push(result);
       }
       else if ("cat" in result && result['cat'] == "statusmsg" && "msg" in result)
       {
-        this.messages.push({username: "ChatBot", "message" : "<i>" + result['msg'] + "</i>"})
+        this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['msg'] + "</i>"})
       }
       else if ("cat" in result && result['cat'] == "announcement" && "msg" in result)
       {
-        this.messages.push({username: "Announcement", "message" : "<i>" + result['msg'] + "</i>"})
+        this.messages.push({cat: "announcement", username: "", "message" : "<i>" + result['msg'] + "</i>"})
       }
     });
 
-    
-    this.api.get("/api/data/online_by_id/" + this.auth.channel_id + "/", this.auth.token)
+    this.update_online_list();
+  }
+
+  update_online_list()
+  {
+        this.api.get("/api/data/online_by_id/" + this.auth.channel_id + "/", this.auth.token)
         .subscribe(result => {
           this.onlineUsers = result
+          console.log(result);
         });
   }
+
 
   sendMessage(message : string) {
     if (message == "")

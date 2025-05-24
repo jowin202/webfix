@@ -28,7 +28,7 @@ async def get_toplist():
 async def get_channel_by_name(channel : str):
 
     conn = await get_pg_connection() 
-    query = "SELECT u.username, u.username_html FROM users u, channels c WHERE u.channel_id = c.id AND  c.name = $1"
+    query = "SELECT u.username, u.username_html FROM users u, channels c WHERE u.channel_id = c.id AND u.token != '' AND c.name = $1"
     result = await conn.fetch(query, channel)
     await release_pg_connection(conn)
 
@@ -38,7 +38,7 @@ async def get_channel_by_name(channel : str):
 async def get_channel_by_id(id : int):
 
     conn = await get_pg_connection() 
-    query = "SELECT u.username, u.username_html FROM users u WHERE u.channel_id = $1"
+    query = "SELECT u.username, u.username_html FROM users u WHERE u.token != '' AND u.channel_id = $1"
     result = await conn.fetch(query, id)
     await release_pg_connection(conn)
 
