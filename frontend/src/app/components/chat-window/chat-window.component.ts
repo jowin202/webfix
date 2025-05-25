@@ -56,7 +56,6 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
         this.api.get("/api/data/online_by_id/" + this.auth.channel_id + "/", this.auth.token)
         .subscribe(result => {
           this.onlineUsers = result
-          console.log(result);
         });
   }
 

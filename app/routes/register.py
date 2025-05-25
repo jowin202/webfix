@@ -82,24 +82,29 @@ async def activate_account(activation_token : str):
 async def login_page_info():
 
     online_list = []
+    channels = []
     try:
         # todo visible
         # todo channels
         conn = await get_pg_connection() 
         data = await conn.fetch("SELECT username FROM users WHERE token != ''")
         online_list = [record['username'] for record in data]
-    except:
-        pass
+        data = await conn.fetch("SELECT name FROM channels WHERE visible = true")
+        channels = [record['name'] for record in data]
+    except Exception as e:
+        print(str(e),flush=True)
     finally:
         if conn:
             await release_pg_connection(conn)
 
 
     return {"online_names": online_list, 
-            "allow_guest_login": await manager.get_setting("allow_guest_login"), 
+            "allow_guest_login": manager.get_setting("allow_guest_login"), 
+            "user_verification_mail": manager.get_setting("user_verification_mail"), 
+            "user_verification_fediverse": manager.get_setting("user_verification_fediverse"), 
             "display_online": True, 
             "number_online": len(online_list), 
             "show_rooms": True, 
-            "rooms": ["Hauptchat", "Nebenchat"]
+            "channels": channels
             }
 

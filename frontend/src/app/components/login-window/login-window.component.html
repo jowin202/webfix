@@ -6,30 +6,41 @@
         <label for="username">Username</label>
         <input type="text" id="username" class="input-field" name="username" ngModel />
       </div>
+
       <div class="form-group">
         <label for="password">Password</label>
         <input type="password" id="password" class="input-field" name="password" ngModel />
       </div>
 
-      <!-- Password error message -->
+      <!-- Error message -->
       <div class="error-message" *ngIf="this.auth.password_error;">
         ❌ Incorrect username or password.
       </div>
 
-      <button class="login-button" (click)="do_page_login(form.value);">Login</button>
+      <button class="login-button" (click)="do_page_login(form.value)">Login</button>
+
+      <!-- Extra actions -->
+      <div class="extra-actions">
+        <button type="button" class="link-button" [routerLink]="'/register'">Don't have an account? Register</button>
+        <button type="button" class="link-button" [routerLink]="'/forgot-password'">Forgot Password?</button>
+      </div>
     </form>
 
     <div class="separator">or</div>
 
     <form #form1="ngForm">
-      <!-- Guest login -->
       <div class="form-group">
         <label for="guestName">Guest Name</label>
-        <input type="text" id="guestName" class="input-field" name="guestName" ngModel/>
+        <input type="text" id="guestName" class="input-field" name="guestName" ngModel />
+      </div>
+      
+      <!-- Error message -->
+      <div class="error-message" *ngIf="this.auth.guest_error;">
+        ❌ Invalid username or username already taken.
       </div>
       <button class="guest-button" (click)="do_guest_login(form1.value)">Continue as Guest</button>
-
     </form>
+
     <div class="online-count">🟢 13 users online</div>
   </div>
 </div>

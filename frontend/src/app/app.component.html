@@ -2,7 +2,7 @@
 
 <ng-container *ngIf="this.auth.init">
     <ng-container *ngIf="!this.auth.logged_in">
-    <app-login-window></app-login-window>
+    <router-outlet />
     </ng-container>
     <ng-container *ngIf="this.auth.logged_in">
         <app-chat-window></app-chat-window>
@@ -11,4 +11,4 @@
 
 
 
-<router-outlet />
+

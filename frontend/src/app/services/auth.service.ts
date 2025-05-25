@@ -16,6 +16,7 @@ export class AuthService {
   logged_in: boolean = false;
 
   password_error : boolean = false;
+  guest_error : boolean = false;
 
   constructor(private http: HttpClient) {
     this.token_from_browser();
@@ -88,7 +89,7 @@ export class AuthService {
       }),
       catchError((error: any) => {
         if (error.status === 400) {
-          this.password_error = true;
+          this.guest_error = true;
           console.error('Unauthorized access. Please login.');
           return []
         }
@@ -194,6 +195,7 @@ export class AuthService {
       localStorage.setItem("token", "");
     }
     this.password_error = false; //login page without error
+    this.guest_error = false;
     this.logged_in = false;
   }
 

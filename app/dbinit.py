@@ -10,7 +10,8 @@ async def pg_db_init():
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS channels (
             id SERIAL PRIMARY KEY,
-            name VARCHAR UNIQUE
+            name VARCHAR UNIQUE,
+            visible BOOL DEFAULT true
             )
         ''')
         
@@ -60,15 +61,6 @@ async def pg_db_init():
         ''', calc_hmac(os.getenv("ADMIN_DEFAULT_PASSWORD")))
 
 
-        #await conn.execute('''
-        #    INSERT INTO users (username, name, tel, mail, fediverse_id, token, password) 
-        #    VALUES ('johannes', 'Johannes Winkler', '00000000', 'johannes.w@gmx.at', '@jowin@pixelfed.graz.social', '', 'abc123')
-        #    ON CONFLICT (username) DO NOTHING
-        #''')
-
-
-
-
 
         # Create settings table
         await conn.execute('''
@@ -112,8 +104,8 @@ async def pg_db_init():
 async def pg_db_remove():
     conn = await get_pg_connection() 
     try:
-        await conn.execute('''DROP TABLE channels''')
         await conn.execute('''DROP TABLE users''')
+        await conn.execute('''DROP TABLE channels''')
         await conn.execute('''DROP TABLE settings_str''')
         await conn.execute('''DROP TABLE settings_bool ''')
         await conn.execute('''DROP TABLE settings_int''')

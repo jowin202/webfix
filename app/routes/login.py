@@ -68,6 +68,9 @@ async def login(username : str):
     valid = True
     token = token_generate()
     
+    if len(username) < 4:
+        raise HTTPException(status_code=400, detail="Guest Login Error")
+
     try:
         # check if user exists
         conn = await get_pg_connection()

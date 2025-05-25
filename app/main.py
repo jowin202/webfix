@@ -45,6 +45,8 @@ async def lifespan(app: FastAPI):
     await manager.set_setting_if_not_exists("allow_guest_login", True)
     await manager.set_setting_if_not_exists("activate_timeout", True)
     await manager.set_setting_if_not_exists("mandatory_user_verification", True)
+    await manager.set_setting_if_not_exists("user_verification_mail", True)
+    await manager.set_setting_if_not_exists("user_verification_fediverse", True)
 
     await manager.set_setting_if_not_exists("timeout_time", 180)
     await manager.set_setting_if_not_exists("pw_recovery_token_valid_time", 600)

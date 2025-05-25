@@ -1,0 +1,47 @@
+<div class="chat-container">
+  <div class="login-window">
+    <h2>Register to Chat</h2>
+    <form #registerForm="ngForm">
+      <div class="form-group">
+        <label for="regUsername">Username (max 12 chars, no special chars)</label>
+        <input type="text" id="regUsername" class="input-field" name="username"
+               ngModel pattern="^[a-zA-Z0-9]{1,12}$" required />
+      </div>
+
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" class="input-field" name="fullName" ngModel required />
+      </div>
+
+      <div class="form-group">
+        <label for="tel">Telephone Number</label>
+        <input type="tel" id="tel" class="input-field" name="tel" ngModel />
+      </div>
+
+      <!-- Email Verification -->
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" class="input-field" name="email" ngModel />
+      </div>
+
+      <!-- Fediverse ID Verification -->
+      <div class="form-group">
+        <label for="fediverse">Fediverse ID (&#64;user&#64;server)</label>
+        <input type="text" id="fediverse" class="input-field" name="fediverse" ngModel />
+      </div>
+
+      <div class="form-group">
+        <label for="regPassword">Password</label>
+        <input type="password" id="regPassword" class="input-field" name="password" ngModel required />
+      </div>
+
+      <!-- Verification Required Error -->
+      <div class="error-message" *ngIf="false">
+        ❌ You must provide either an email or a Fediverse ID for verification.
+      </div>
+
+    <button class="login-button">Register</button>
+    <button type="button" class="guest-button" [routerLink]="'/'">Back to Login</button>
+    </form>
+  </div>
+</div>
