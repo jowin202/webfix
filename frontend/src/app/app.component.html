@@ -1,14 +1,4 @@
 
 
-<ng-container *ngIf="this.auth.init">
-    <ng-container *ngIf="!this.auth.logged_in">
-    <router-outlet />
-    </ng-container>
-    <ng-container *ngIf="this.auth.logged_in">
-        <app-chat-window></app-chat-window>
-    </ng-container>
-</ng-container>
-
-
-
+<router-outlet />
 

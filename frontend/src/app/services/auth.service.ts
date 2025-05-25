@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, map } from 'rxjs/operators';
 
 @Injectable({
@@ -8,7 +9,6 @@ import { catchError, map } from 'rxjs/operators';
 export class AuthService {
 
 
-  init: boolean = false;
   token: any = "";
   username: string = "";
   channel_id: number = -1;
@@ -18,7 +18,7 @@ export class AuthService {
   password_error : boolean = false;
   guest_error : boolean = false;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private router: Router) {
     this.token_from_browser();
   }
 
@@ -56,7 +56,7 @@ export class AuthService {
         this.channel_id = response["channel_id"];
         this.username = username;
         this.logged_in = true;
-        this.init = true;
+        this.router.navigate(['/chat']);
 
         if (typeof localStorage !== "undefined" && localStorage !== null) {
           if (remember)
@@ -103,7 +103,7 @@ export class AuthService {
         this.username = username;
         this.channel_id = response["channel_id"];
         this.logged_in = true;
-        this.init = true;
+        this.router.navigate(['/chat']);
 
         console.log("hahaha")
         if (typeof localStorage !== "undefined" && localStorage !== null) {
@@ -142,7 +142,6 @@ export class AuthService {
       catchError((error: any) => {
         if (error.status === 404) {
           console.error('Login failed.');
-          this.init = true;
           return []
         }
         return [];
@@ -156,7 +155,6 @@ export class AuthService {
         this.channel_id = response["channel_id"];
         this.logged_in = true;
       }
-      this.init = true;
     });
   }
 
@@ -173,10 +171,6 @@ export class AuthService {
 
     if (token != "") {
       this.do_login_from_token(token);
-    }
-    else
-    {
-      this.init = true;
     }
   }
 

@@ -23,7 +23,6 @@ export class AppComponent implements OnInit {
         this.api.get("/api/register/login_page/", this.auth.token) // no token needed
         .subscribe(result => {
           this.loginData = result
-          console.log(result);
         });
   }
 
