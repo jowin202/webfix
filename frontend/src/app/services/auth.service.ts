@@ -154,6 +154,7 @@ export class AuthService {
         this.admin_level = response["admin"];
         this.channel_id = response["channel_id"];
         this.logged_in = true;
+        this.router.navigate(['/chat']);
       }
     });
   }

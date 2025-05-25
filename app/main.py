@@ -223,12 +223,20 @@ app.include_router(settings.router, tags=["settings"], prefix="/api/settings", d
 app.include_router(admin.router, tags=["admin"], prefix="/api/admin", dependencies=[Depends(verify_token_admin)])
 
 
-@app.get("/", response_class=HTMLResponse)
-async def read_index():
-    with open("static/index.html", "r") as f:
-        return f.read() 
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
-app.mount("/", StaticFiles(directory="static"), name="static")
+
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+async def spa_fallback(request: Request, full_path: str):
+    # If the path starts with api, recovery, or activate, let them 404 (or handle as you like)
+    if (full_path.startswith("api") or
+        full_path.startswith("recovery") or
+        full_path.startswith("activate")):
+        return HTMLResponse(status_code=404, content="Not Found")
+
+    # Otherwise, serve index.html for SPA
+    with open("static/index.html", "r") as f:
+        return HTMLResponse(content=f.read())
 
 
 templates = Jinja2Templates(directory="templates")
