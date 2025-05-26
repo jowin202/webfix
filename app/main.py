@@ -232,7 +232,6 @@ app.mount("/", StaticFiles(directory="static", html=True), name="static")
 async def spa_fallback(request: Request, full_path: str):
     # If the path starts with api, recovery, or activate, let them 404 (or handle as you like)
     if (full_path.startswith("api") or
-        full_path.startswith("recovery") or
         full_path.startswith("activate")):
         return HTMLResponse(status_code=404, content="Not Found")
 
