@@ -21,6 +21,7 @@ router = APIRouter()
 @router.get("/activate/{activation_token}/")
 async def activate_account(activation_token : str):
     if len(activation_token) < 4:
+        return "Link invalid"
     conn = await get_pg_connection() 
     status = True
     query = '''
