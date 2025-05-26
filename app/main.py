@@ -218,7 +218,7 @@ app.include_router(login.router, tags=["login"], prefix="/api/login")
 app.include_router(register.router, tags=["register"], prefix="/api/register")
 app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
 app.include_router(data.router, tags=["data"], prefix="/api/data", dependencies=[Depends(verify_token)])
-app.include_router(activationlinks.router, tags=["activationlinks"], prefix="/")
+app.include_router(activationlinks.router, tags=["activationlinks"], prefix="")
 
 
 app.include_router(settings.router, tags=["settings"], prefix="/api/settings", dependencies=[Depends(verify_token_admin)])
