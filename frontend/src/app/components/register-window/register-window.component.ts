@@ -27,8 +27,8 @@ export class RegisterWindowComponent {
               "mail": content.email,
               "fediverse_id": content.fediverse,
               "password": content.password,
-              "verify_mail": false,
-              "verify_fediverse": false
+              "verify_mail": true,
+              "verify_fediverse": true
             })
       .subscribe(result => {
         if ("error_code" in result)

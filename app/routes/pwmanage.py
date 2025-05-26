@@ -17,14 +17,28 @@ manager = SettingsManager()
 
 
 
+class LostPasswordMailRequest(BaseModel):
+    username: str
+    mail: str
 
-@router.post("/lost_password/")
-async def lost_password(username : str, mail : str):
+class LostPasswordFediverseRequest(BaseModel):
+    username: str
+    fediverse_id: str
+
+class newPasswordRequest(BaseModel):
+    lost_pass_token: str
+    new_pass: str
+
+
+
+
+@router.post("/lost_password_mail/")
+async def lost_password_mail(data : LostPasswordMailRequest):
     
     conn = await get_pg_connection() 
-    query = "SELECT id,mail FROM users WHERE username = $1 AND LOWER(mail) = LOWER($2)"
+    query = "SELECT id,mail FROM users WHERE LOWER(username) = LOWER($1) AND LOWER(mail) = LOWER($2)"
 
-    result = await conn.fetchrow(query, username, mail)
+    result = await conn.fetchrow(query, data.username, data.mail)
     
     if result:
         lost_pass_token = token_generate()
@@ -34,13 +48,13 @@ async def lost_password(username : str, mail : str):
             lost_password_token_valid_from = NOW()
             WHERE LOWER(username) = LOWER($2)
         '''
-        await conn.execute(query, lost_pass_token, username)
-        mail_body = "Hello " + username + "\n\n"
+        await conn.execute(query, lost_pass_token, data.username)
+        mail_body = "Hello " + data.username + "\n\n"
         mail_body += "We received a request to reset the password for your account.\n"
         mail_body += "To set a new password, please click the link below or paste it into your browser:\n\n"
         mail_body += os.getenv('PROTOCOL') + "://" + os.getenv("DOMAIN_NAME") + "/recovery/" + lost_pass_token + "/\n\n"
         mail_body += "Kind regards"
-        send_mail(mail, "Lost Password", mail_body)
+        send_mail(data.mail, "Lost Password", mail_body)
 
     await release_pg_connection(conn)
     return True
@@ -50,12 +64,12 @@ async def lost_password(username : str, mail : str):
 
 
 @router.post("/lost_password_fediverse/")
-async def lost_password(username : str, fediverse_id : str):
+async def lost_password_fediverse(data: LostPasswordFediverseRequest):
     
     conn = await get_pg_connection() 
     query = "SELECT id,fediverse_id FROM users WHERE username = $1 AND LOWER(fediverse_id) = LOWER($2)"
 
-    result = await conn.fetchrow(query, username, fediverse_id)
+    result = await conn.fetchrow(query, data.username, data.fediverse_id)
     
     if result:
         lost_pass_token = token_generate()
@@ -65,10 +79,10 @@ async def lost_password(username : str, fediverse_id : str):
             lost_password_token_valid_from = NOW()
             WHERE LOWER(username) = LOWER($2)
         '''
-        await conn.execute(query, lost_pass_token, username)
+        await conn.execute(query, lost_pass_token, data.username)
         text = "Hi, Password Recovery Link: "
         text += os.getenv("DOMAIN_NAME") + "/recovery/" + lost_pass_token + "/"
-        send_fediverse(fediverse_id, text)
+        send_fediverse(data.fediverse_id, text)
 
     await release_pg_connection(conn)
     return True
@@ -77,8 +91,8 @@ async def lost_password(username : str, fediverse_id : str):
 
 
 @router.post("/recover_password/")
-async def recover_password(lost_pass_token : str, new_password : str):
-    if new_password == "" or lost_pass_token == "": 
+async def recover_password(data: newPasswordRequest): 
+    if data.new_pass == "" or data.lost_pass_token == "": 
         return True
     
     conn = await get_pg_connection() 
@@ -90,7 +104,7 @@ async def recover_password(lost_pass_token : str, new_password : str):
         AND EXTRACT(EPOCH FROM (NOW() - lost_password_token_valid_from)) <= $3;
     '''
     try:
-        await conn.execute(query, calc_hmac(new_password), lost_pass_token, manager.get_setting("pw_recovery_token_valid_time"))
+        await conn.execute(query, calc_hmac(data.new_pass), data.lost_pass_token, manager.get_setting("pw_recovery_token_valid_time"))
     except:
         pass
     finally:

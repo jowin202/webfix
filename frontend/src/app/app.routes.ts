@@ -4,6 +4,8 @@ import { RegisterWindowComponent } from './components/register-window/register-w
 import { ChatWindowComponent } from './components/chat-window/chat-window.component';
 import { AuthService } from './services/auth.service';
 import { inject } from '@angular/core';
+import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 
 
 
@@ -25,5 +27,6 @@ export const routes: Routes = [
   { path: 'login', component: LoginWindowComponent },
   { path: 'register', component: RegisterWindowComponent },
   { path: 'chat', component: ChatWindowComponent, canActivate: [canActivateChat] },
-  //{ path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'recovery/:token', component: RecoverPasswordComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent}
 ];
