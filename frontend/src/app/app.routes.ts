@@ -28,5 +28,6 @@ export const routes: Routes = [
   { path: 'register', component: RegisterWindowComponent },
   { path: 'chat', component: ChatWindowComponent, canActivate: [canActivateChat] },
   { path: 'recovery/:token', component: RecoverPasswordComponent },
-  { path: 'forgot-password', component: ForgotPasswordComponent}
+  { path: 'forgot-password', component: ForgotPasswordComponent},
+  { path: '**', component: LoginWindowComponent },
 ];
