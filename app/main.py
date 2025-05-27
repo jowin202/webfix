@@ -229,10 +229,13 @@ app.mount("/", StaticFiles(directory="static", html=True), name="static-root")
 
 @app.middleware("http")
 async def spa_fallback(request: Request, call_next):
-    # Let static files and API work as usual
+
+    # Paths that should NOT fall back to index.html
+    passthrough_prefixes = (
+        "/api", "/activate", "/docs", "/redoc", "/openapi.json"
+    )
     if (
-        request.url.path.startswith("/api")
-        or request.url.path.startswith("/activate")
+        request.url.path.startswith(passthrough_prefixes)
         or os.path.isfile(f"static{request.url.path}")
     ):
         return await call_next(request)
