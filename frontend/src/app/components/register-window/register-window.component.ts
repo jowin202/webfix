@@ -17,6 +17,9 @@ export class RegisterWindowComponent {
   error : Boolean = false;
   success: Boolean = false;
 
+  pass : string = "";
+  confPass : string = "";
+
   do_register(content : any)
   {
     this.success = false;
@@ -37,6 +40,8 @@ export class RegisterWindowComponent {
         {
           this.error = false;
           this.success = true;
+          this.pass = "";
+          this.confPass = "";
         }
       });
     

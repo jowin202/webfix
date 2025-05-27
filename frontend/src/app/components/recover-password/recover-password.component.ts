@@ -15,6 +15,9 @@ export class RecoverPasswordComponent {
   success : Boolean = false;
   token : string;
 
+  pass : string = "";
+  confPass : string = "";
+
   constructor(public api : ApiService, private route: ActivatedRoute){
     this.token = this.route.snapshot.paramMap.get('token') || '';
   }
@@ -26,7 +29,7 @@ export class RecoverPasswordComponent {
       "lost_pass_token": this.token,
       "new_pass": data.newPassword
     }).subscribe(result => {
-      console.log(result);
+      this.success = true;
     });
   }
 
