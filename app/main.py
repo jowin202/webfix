@@ -225,28 +225,19 @@ app.include_router(settings.router, tags=["settings"], prefix="/api/settings", d
 app.include_router(admin.router, tags=["admin"], prefix="/api/admin", dependencies=[Depends(verify_token_admin)])
 
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="static-root")
 
+@app.middleware("http")
+async def spa_fallback(request: Request, call_next):
+    # Let static files and API work as usual
+    if (
+        request.url.path.startswith("/api")
+        or request.url.path.startswith("/activate")
+        or os.path.isfile(f"static{request.url.path}")
+    ):
+        return await call_next(request)
 
-@app.get("/{full_path:path}", response_class=HTMLResponse)
-async def spa_fallback(request: Request, full_path: str):
-    # If the path starts with api, recovery, or activate, let them 404 (or handle as you like)
-    if (full_path.startswith("api") or
-        full_path.startswith("activate")):
-        return HTMLResponse(status_code=404, content="Not Found!")
-
-
-    if full_path.startswith("recovery"):
-        with open("static/index.csr.html", "r") as f:
-            return HTMLResponse(content=f.read())
-        
-    # Otherwise, serve index.html for SPA
-    with open("static/index.html", "r") as f:
-        return HTMLResponse(content=f.read())
-
-
-templates = Jinja2Templates(directory="templates")
-
-@app.get("/test/{token}/", response_class=HTMLResponse)
-async def test_minimal_frontend(request: Request, token : str):
-    return templates.TemplateResponse("client.html", {"request": request, "token": token})
+    # For anything else, serve index.html
+    with open("static/index.html") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
