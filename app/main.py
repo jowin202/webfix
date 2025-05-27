@@ -235,6 +235,11 @@ async def spa_fallback(request: Request, full_path: str):
         full_path.startswith("activate")):
         return HTMLResponse(status_code=404, content="Not Found!")
 
+
+    if full_path.startswith("recovery"):
+        with open("static/index.csr.html", "r") as f:
+            return HTMLResponse(content=f.read())
+        
     # Otherwise, serve index.html for SPA
     with open("static/index.html", "r") as f:
         return HTMLResponse(content=f.read())
