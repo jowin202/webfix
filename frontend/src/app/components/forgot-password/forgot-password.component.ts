@@ -24,7 +24,7 @@ export class ForgotPasswordComponent {
         "username": data.username,
         "mail": data.mail
       }).subscribe(result => {
-        //console.log(result);
+        this.success = true;
       });
 
     }
@@ -34,7 +34,7 @@ export class ForgotPasswordComponent {
         "username": data.username,
         "fediverse_id": data.fediverse_id
       }).subscribe(result => {
-        //console.log(result);
+        this.success = true;
       });
     }
   }
