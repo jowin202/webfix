@@ -82,6 +82,7 @@ async def pg_db_init():
                 lost_password_token_valid_from TIMESTAMP,
                 password VARCHAR NOT NULL,
                 online_time INT DEFAULT 0,
+                failed_attempts INT DEFAULT 0,
                 created TIMESTAMP DEFAULT NOW(),
                 last_posted TIMESTAMP,
                 last_login TIMESTAMP,

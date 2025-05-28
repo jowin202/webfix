@@ -3,8 +3,9 @@ from fastapi import FastAPI, UploadFile, File, HTTPException,APIRouter, Depends,
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from pydantic import BaseModel
-from helper import token_generate, send_mail, send_fediverse, calc_hmac, verify_token
+from helper import token_generate, send_mail, send_fediverse, calc_hmac
 from db import get_pg_connection, release_pg_connection
+from security import verify_token
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
 import json
@@ -40,7 +41,8 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                     SET token = $1,
                     last_login = NOW(),
                     last_posted = NOW(),
-                    login_count = login_count+1
+                    login_count = login_count+1,
+                    failed_attempts = 0
                     WHERE LOWER(username) = LOWER($2)
                 '''
                 await conn.execute(query, token, username)
@@ -48,6 +50,15 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                 # logout if logged in
                 await conn.execute(f"NOTIFY whisper_{user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login'})}'")
                 await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
+            elif result and result['password'] != password:
+                query = '''
+                    UPDATE users 
+                    SET failed_attempts = failed_attempts+1
+                    WHERE LOWER(username) = LOWER($2)
+                '''
+                await conn.execute(query, token)
+
+
     except:
         valid = False
     finally:
