@@ -153,7 +153,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
     conn = await asyncpg.connect(**DB_CONFIG)
-    await conn.add_listener("channel" + str(channel_id), lambda *args: asyncio.create_task(notify_ws(args, websocket)))
+    await conn.add_listener("channel_" + str(channel_id), lambda *args: asyncio.create_task(notify_ws(args, websocket)))
     await conn.add_listener("whisper_" + str(id), lambda *args: asyncio.create_task(notify_ws_w(args, websocket)))
 
 
