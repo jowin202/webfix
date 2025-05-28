@@ -21,7 +21,6 @@ from db import pg_db_init, get_pg_connection, initialize_connection_pool, releas
 from settings import SettingsManager
 
 
-CHANNEL = "mynotifications"
 
 
 # Database config
@@ -104,11 +103,12 @@ async def websocket_endpoint(websocket: WebSocket):
     message = ""
     username = ""
     id = -1
+    channel_id = 1
     is_guest = False
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT id, username,remove_on_logout
+            SELECT id, username, channel_id, remove_on_logout
             FROM users 
             WHERE token = $1 
         '''
@@ -117,6 +117,7 @@ async def websocket_endpoint(websocket: WebSocket):
             valid = True
             username = result['username']
             id = int(result['id'])
+            channel_id = int(result['channel_id'])
             is_guest = True if result['remove_on_logout'] else False
         else:
             message = "Unknown token"
@@ -152,7 +153,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
     conn = await asyncpg.connect(**DB_CONFIG)
-    await conn.add_listener(CHANNEL, lambda *args: asyncio.create_task(notify_ws(args, websocket)))
+    await conn.add_listener("channel" + str(channel_id), lambda *args: asyncio.create_task(notify_ws(args, websocket)))
     await conn.add_listener("whisper_" + str(id), lambda *args: asyncio.create_task(notify_ws_w(args, websocket)))
 
 
