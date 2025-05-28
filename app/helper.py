@@ -1,9 +1,7 @@
 
 import string
 import random
-import asyncpg
 import os
-from fastapi import Depends, Request, HTTPException
 
 import smtplib
 from email.message import EmailMessage
@@ -29,96 +27,6 @@ def token_generate():
 
 
 
-connection_pool = None
-
-async def initialize_connection_pool():
-    """
-    Initialize the connection pool. This should be called at application startup.
-    """
-    global connection_pool
-    POSTGRES_USER = os.getenv('POSTGRES_USER')
-    POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-    POSTGRES_DB = os.getenv('POSTGRES_DB')
-    POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')  # Default to localhost if not set
-    POSTGRES_PORT = os.getenv('POSTGRES_PORT', 5432)         # Default to 5432 if not set
-    DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-
-    connection_pool = await asyncpg.create_pool(DATABASE_URL)
-
-async def get_pg_connection():
-    """
-    Get a connection from the connection pool.
-    """
-    global connection_pool
-    if connection_pool is None:
-        raise RuntimeError("Connection pool is not initialized. Call initialize_connection_pool() first.")
-    
-    return await connection_pool.acquire()
-
-async def release_pg_connection(connection):
-    """
-    Release a connection back to the pool.
-    """
-    global connection_pool
-    if connection_pool is None:
-        raise RuntimeError("Connection pool is not initialized. Call initialize_connection_pool() first.")
-    await connection_pool.release(connection)
-
-
-# security
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login/")
-
-async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
-    conn = await get_pg_connection()
-
-    x_forwarded_for = request.headers.get("x-forwarded-for")
-    client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.client.host
-
-    ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
-    ip_blocked = await conn.fetchval(ip_check_query, client_ip)
-
-    query = '''
-        SELECT id 
-        FROM users 
-        WHERE token = $1 
-    '''
-    result = await conn.fetchrow(query, token)
-    await release_pg_connection(conn)
-
-    if ip_blocked:
-        raise HTTPException(status_code=403, detail="Your IP is blocked.")
-    
-    valid = False
-    if result: # todo result as admin
-        valid = True
-
-    if not valid:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    request.state.user_id = result['id']
-    request.state.admin = 0
-    return token
-
-
-async def verify_token_admin(request: Request, token: str = Depends(oauth2_scheme)):
-    conn = await get_pg_connection()
-    query = '''
-        SELECT id, admin 
-        FROM users 
-        WHERE token = $1 AND admin > 2
-    '''
-    result = await conn.fetchrow(query, token)
-    await release_pg_connection(conn)
-
-    valid = False
-    if result: # todo result as admin
-        valid = True
-
-    if not valid:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    request.state.user_id = result['id']
-    request.state.admin = result['admin']
-    return token
 
 
 def send_mail(receiver_email, subject, body):

@@ -3,10 +3,9 @@ from fastapi.responses import StreamingResponse
 from io import BytesIO
 from pydantic import BaseModel
 from helper import token_generate
-from helper import get_pg_connection, release_pg_connection
+from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from helper import get_pg_connection, release_pg_connection
 
 import re
 

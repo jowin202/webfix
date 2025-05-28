@@ -1,6 +1,47 @@
 import asyncpg
 import os
-from helper import get_pg_connection, release_pg_connection, calc_hmac
+from helper import calc_hmac
+
+
+
+
+connection_pool = None
+
+async def initialize_connection_pool():
+    """
+    Initialize the connection pool. This should be called at application startup.
+    """
+    global connection_pool
+    POSTGRES_USER = os.getenv('POSTGRES_USER')
+    POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+    POSTGRES_DB = os.getenv('POSTGRES_DB')
+    POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')  # Default to localhost if not set
+    POSTGRES_PORT = os.getenv('POSTGRES_PORT', 5432)         # Default to 5432 if not set
+    DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+
+    connection_pool = await asyncpg.create_pool(DATABASE_URL)
+
+async def get_pg_connection():
+    """
+    Get a connection from the connection pool.
+    """
+    global connection_pool
+    if connection_pool is None:
+        raise RuntimeError("Connection pool is not initialized. Call initialize_connection_pool() first.")
+    
+    return await connection_pool.acquire()
+
+async def release_pg_connection(connection):
+    """
+    Release a connection back to the pool.
+    """
+    global connection_pool
+    if connection_pool is None:
+        raise RuntimeError("Connection pool is not initialized. Call initialize_connection_pool() first.")
+    await connection_pool.release(connection)
+
+
+
 
 
 

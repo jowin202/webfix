@@ -1,14 +1,12 @@
 from fastapi import APIRouter
 from io import BytesIO
 from helper import token_generate
-from helper import get_pg_connection, release_pg_connection
+from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from typing import Dict, Any, List
-from helper import get_pg_connection, release_pg_connection
 from settings import SettingsManager
 
-from dbinit import pg_db_init, pg_db_remove
 
 router = APIRouter()
 
