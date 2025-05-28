@@ -152,10 +152,32 @@ async def websocket_endpoint(websocket: WebSocket):
         return
 
 
-    conn = await asyncpg.connect(**DB_CONFIG)
-    await conn.add_listener("channel_" + str(channel_id), lambda *args: asyncio.create_task(notify_ws(args, websocket)))
-    await conn.add_listener("whisper_" + str(id), lambda *args: asyncio.create_task(notify_ws_w(args, websocket)))
 
+
+    async def switch_channel(new_channel_id):
+        nonlocal current_listener, channel_id
+        print(f"Switching from {channel_id} to {new_channel_id}", flush=True)
+        await conn.remove_listener("channel_" + str(channel_id), current_listener)
+        channel_id = new_channel_id
+        await conn.add_listener("channel_" + str(channel_id), current_listener)
+    
+    def create_listener(websocket):
+        async def listener(*args):
+            await notify_ws(args, websocket)
+        return listener
+
+    def create_wh_listener(websocket, switch_channel_callback):
+        async def listener(*args):
+            await notify_ws_wh(args, websocket,switch_channel_callback)
+        return listener
+
+    current_listener = create_listener(websocket)
+    whisper_listener = create_wh_listener(websocket,switch_channel)
+
+
+    conn = await asyncpg.connect(**DB_CONFIG)
+    await conn.add_listener("channel_" + str(channel_id), current_listener)
+    await conn.add_listener("whisper_" + str(id), whisper_listener)
 
     try:
         manager = SettingsManager()
@@ -180,7 +202,8 @@ async def websocket_endpoint(websocket: WebSocket):
         print("WebSocket error:", e)
     finally:
         print("Cleaning up...",flush=True)
-        await conn.remove_listener(CHANNEL, notify_ws)
+        await conn.remove_listener("channel_" + str(channel_id), current_listener)
+        await conn.remove_listener("whisper_" + str(id), whisper_listener)
         await conn.close()
 
 
@@ -191,7 +214,7 @@ async def notify_ws(args, websocket: WebSocket):
     except:
         pass
 
-async def notify_ws_w(args, websocket: WebSocket):
+async def notify_ws_wh(args, websocket: WebSocket, switch_channel_callback):
     _, pid, channel, payload = args
     if payload == 'exit':
         try:
@@ -199,6 +222,8 @@ async def notify_ws_w(args, websocket: WebSocket):
         except:
             pass
         await websocket.close()
+    elif payload.startswith("goto"):
+        await switch_channel_callback(int(payload.split()[1]))
     else:
         await websocket.send_text(payload)
 

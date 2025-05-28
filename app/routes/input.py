@@ -87,3 +87,23 @@ async def whisper(to_username: str, message: str, request: Request):
     return {"status": "notification sent", "message": message}
 
 
+
+@router.post("/goto/{channel_id}/")
+async def goto_channel_by_id(channel_id: int, request: Request):
+    conn = await get_pg_connection()
+    try:
+        query = """
+        UPDATE users
+        SET channel_id = $2
+        WHERE id = $1
+        """
+        await conn.execute(query, request.state.user_id, channel_id)
+        await conn.execute(f"NOTIFY whisper_{request.state.user_id}, 'goto {channel_id}'")
+    except:
+        pass
+    finally:
+        await release_pg_connection(conn)
+    return {"result": True }
+
+
+
