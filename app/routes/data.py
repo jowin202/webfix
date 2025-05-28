@@ -23,6 +23,16 @@ async def get_toplist():
     
 
 
+@router.get("/online/")
+async def get_current_channel(request : Request):
+
+    conn = await get_pg_connection() 
+    query = "SELECT u.username, u.username_html FROM users u, users u2 WHERE u.channel_id = u2.channel_id AND u.token != '' AND u2.id = $1"
+    result = await conn.fetch(query, request.state.user_id)
+    await release_pg_connection(conn)
+
+    return result
+
 @router.get("/online/{channel}/")
 async def get_channel_by_name(channel : str):
 
@@ -45,13 +55,11 @@ async def get_channel_by_id(id : int):
 
 
 @router.get("/channels/")
-async def get_channel_by_id():
-
+async def get_channels():
     conn = await get_pg_connection() 
     query = "SELECT id,name FROM channels"
     result = await conn.fetch(query)
     await release_pg_connection(conn)
-
     return result
 
 

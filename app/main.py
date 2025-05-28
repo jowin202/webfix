@@ -156,10 +156,16 @@ async def websocket_endpoint(websocket: WebSocket):
 
     async def switch_channel(new_channel_id):
         nonlocal current_listener, channel_id
-        print(f"Switching from {channel_id} to {new_channel_id}", flush=True)
+        #print(f"Switching from {channel_id} to {new_channel_id}", flush=True)
+        
+        payload1 = json.dumps({"cat": "userleft", "username": username})
+        payload2 = json.dumps({"cat": "userenters", "username": username})
+
+        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload1}'")
         await conn.remove_listener("channel_" + str(channel_id), current_listener)
         channel_id = new_channel_id
         await conn.add_listener("channel_" + str(channel_id), current_listener)
+        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload2}'")
     
     def create_listener(websocket):
         async def listener(*args):

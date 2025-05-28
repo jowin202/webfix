@@ -1,4 +1,5 @@
 <div class="chat-container">
+
   <div class="chat-window">
     <div class="messages" #messagesContainer>
       <div *ngFor="let message of messages" class="message">
@@ -20,10 +21,19 @@
     />
   </div>
 
-  <div class="user-list">
-    <h3>Online</h3>
-    <ul>
-      <li *ngFor="let user of onlineUsers"><span [innerHTML]="user.username_html"></span></li>
-    </ul>
-  </div>
+
+  <div class="sidebar">
+    <div class="channel-switcher">
+      <label for="channelSelect">Channel:</label>
+      <select id="channelSelect" (change)="switchChannel(channelSwitch.value)" #channelSwitch>
+        <option *ngFor="let channel of channels" [value]="channel.id">{{ channel.name }}</option>
+      </select>
+    </div>
+    <div class="user-list">
+      <h3>Online</h3>
+      <ul>
+        <li *ngFor="let user of onlineUsers"><span [innerHTML]="user.username_html"></span></li>
+      </ul>
+    </div>
+    </div>
 </div>

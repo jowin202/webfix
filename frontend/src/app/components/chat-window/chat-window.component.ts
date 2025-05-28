@@ -17,6 +17,11 @@ interface OnlineUsers {
   username_html: string;
 }
 
+interface Channels {
+  id: number;
+  name: string;
+}
+
 
 @Component({
   selector: 'app-chat-window',
@@ -29,6 +34,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
 
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
+  channels : Channels[] = []
   onlineUsers : OnlineUsers[] = []
   messages : ChatMessage[] = []
 
@@ -42,6 +48,16 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
       {
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['msg'] + "</i>"})
       }
+      else if ("cat" in result && result['cat'] == "userleft" && "username" in result)
+      {
+        this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['username'] + " left the channel</i>"})
+        this.update_online_list();
+      }
+      else if ("cat" in result && result['cat'] == "userenters" && "username" in result)
+      {
+        this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['username'] + " enters the channel</i>"})
+        this.update_online_list();
+      }
       else if ("cat" in result && result['cat'] == "announcement" && "msg" in result)
       {
         this.messages.push({cat: "announcement", username: "", "message" : "<i>" + result['msg'] + "</i>"})
@@ -49,14 +65,33 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
     });
 
     this.update_online_list();
+    this.update_channel_list();
   }
 
   update_online_list()
   {
-        this.api.get("/api/data/online_by_channel_id/" + this.auth.channel_id + "/", this.auth.token)
+        this.api.get("/api/data/online/", this.auth.token)
         .subscribe(result => {
           this.onlineUsers = result
         });
+  }
+
+
+
+  update_channel_list()
+  {
+        this.api.get("/api/data/channels/", this.auth.token)
+        .subscribe(result => {
+          this.channels = result
+        });
+  }
+  switchChannel(data : any)
+  {
+    console.log("testtest");
+      this.api.post("/api/input/goto/" + data + "/", this.auth.token, {})
+      .subscribe(result => {
+          console.log(result);
+      });
   }
 
 
