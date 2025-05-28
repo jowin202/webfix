@@ -39,6 +39,14 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
   messages : ChatMessage[] = []
 
   ngOnInit() {
+    this.connect_websocket();
+    this.update_online_list();
+    this.update_channel_list();
+  }
+
+
+  connect_websocket()
+  {
     this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
       if ("username" in result && "message" in result){
         result['cat'] = "default"
@@ -62,10 +70,12 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
       {
         this.messages.push({cat: "announcement", username: "", "message" : "<i>" + result['msg'] + "</i>"})
       }
-    });
-
-    this.update_online_list();
-    this.update_channel_list();
+      else if ("error_code" in result){
+        this.messages.push({cat: "statusmsg", username: "ChatBot", message : result['error_string']})
+        //this.connect_websocket()
+      }
+    }
+  );
   }
 
   update_online_list()

@@ -29,5 +29,5 @@ async def set_settings(settings: Dict[str, Any]):
 async def get_settings(keys: List[str]):
     result = {}
     for key in keys:
-       result[key] = await manager.get_setting(key)
+       result[key] = manager.get_setting(key)
     return result

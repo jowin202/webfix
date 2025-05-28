@@ -192,17 +192,17 @@ export class ApiService {
         if (this.isJson(data)) {
           observer.next(JSON.parse(data));
         } else {
-          observer.next([{ error_code: -1, error_string: 'no valid json' }]);
+          observer.next({ error_code: -1, error_string: 'no valid json' });
         }
       };
 
       socket.onerror = (error) => {
-        observer.next([{ error_code: -2, error_string: 'WebSocket error' }]);
+        observer.next({ error_code: -2, error_string: 'WebSocket error' });
       };
 
       socket.onclose = (event) => {
         if (!event.wasClean) {
-          observer.next([{ error_code: event.code, error_string: 'WebSocket closed unexpectedly' }]);
+          observer.next({ error_code: -3, server_error_code: event.code, error_string: 'WebSocket closed unexpectedly' });
         }
         observer.complete();
       };
