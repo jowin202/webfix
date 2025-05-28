@@ -33,7 +33,7 @@ async def get_channel_by_name(channel : str):
 
     return result
 
-@router.get("/online_by_id/{id}/")
+@router.get("/online_by_channel_id/{id}/")
 async def get_channel_by_id(id : int):
 
     conn = await get_pg_connection() 

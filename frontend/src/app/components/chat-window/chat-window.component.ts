@@ -53,7 +53,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
 
   update_online_list()
   {
-        this.api.get("/api/data/online_by_id/" + this.auth.channel_id + "/", this.auth.token)
+        this.api.get("/api/data/online_by_channel_id/" + this.auth.channel_id + "/", this.auth.token)
         .subscribe(result => {
           this.onlineUsers = result
         });
@@ -71,7 +71,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
       return;
     }
 
-    this.api.post(`/api/input/?message=${encodeURIComponent(message)}`, this.auth.token, {})
+    this.api.post(`/api/input/`, this.auth.token, {"message": message})
         .subscribe(result => {
           //console.log('Server response:', result);
         });

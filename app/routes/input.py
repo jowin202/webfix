@@ -12,9 +12,11 @@ import json
 router = APIRouter()
 
 
+class SendMessageRequest(BaseModel):
+    message: str
 
 @router.post("/")
-async def write_text(message: str, request: Request):
+async def write_text(data: SendMessageRequest, request: Request):
     conn = await get_pg_connection()
     query = """
         SELECT username, channel_id, last_posted
@@ -34,13 +36,13 @@ async def write_text(message: str, request: Request):
     channel_id = int(result['channel_id']) if result else -1
     payload = json.dumps({
     "username": result['username'],
-    "message": message
+    "message": data.message
     })
     quoted_payload = await conn.fetchval("SELECT quote_literal($1)", payload)
     await conn.execute(f"NOTIFY channel_{channel_id}, {quoted_payload}")
 
     await release_pg_connection(conn)
-    return {"status": "notification sent", "message": message}
+    return {"status": "notification sent", "message": data.message}
 
 
 
