@@ -26,9 +26,6 @@ def token_generate():
     return str("".join(password))
 
 
-
-
-
 def send_mail(receiver_email, subject, body):
     smtp_server = os.getenv('SMTP_HOST')
     smtp_port = os.getenv('SMTP_PORT') 
@@ -70,6 +67,8 @@ def send_fediverse(receiver, text):
     )
 
 
+#TODO
+'''
 async def block_ip(ip : str):
     conn = await get_pg_connection()
     try:
@@ -88,9 +87,7 @@ async def unblock_ip(ip: str):
         pass
     finally:
         await release_pg_connection(conn)
-
-
-
+'''
 
 
 def calc_hmac(message: str) -> str:

@@ -54,9 +54,9 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                 query = '''
                     UPDATE users 
                     SET failed_attempts = failed_attempts+1
-                    WHERE LOWER(username) = LOWER($2)
+                    WHERE LOWER(username) = LOWER($1)
                 '''
-                await conn.execute(query, token)
+                await conn.execute(query, username)
 
 
     except:
