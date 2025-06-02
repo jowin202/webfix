@@ -242,6 +242,7 @@ from routes import pwmanage
 from routes import data
 from routes import activationlinks
 from routes.admin import settings
+from routes.admin import userdb
 from routes.admin import admin
 
 
@@ -253,7 +254,8 @@ app.include_router(data.router, tags=["data"], prefix="/api/data", dependencies=
 app.include_router(activationlinks.router, tags=["activationlinks"], prefix="")
 
 
-app.include_router(settings.router, tags=["settings"], prefix="/api/settings", dependencies=[Depends(verify_token_admin)])
+app.include_router(settings.router, tags=["admin_settings"], prefix="/api/admin/settings", dependencies=[Depends(verify_token_admin)])
+app.include_router(userdb.router, tags=["admin_user_database"], prefix="/api/admin/userdb", dependencies=[Depends(verify_token_admin)])
 app.include_router(admin.router, tags=["admin"], prefix="/api/admin", dependencies=[Depends(verify_token_admin)])
 
 
