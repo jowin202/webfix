@@ -34,7 +34,7 @@ manager = SettingsManager()
 async def get_user_by_id(id : int):
     conn = await get_pg_connection()
     query = """
-        SELECT id, username, username_html,name,tel,mail,fediverse_id,
+        SELECT id, username, username_html,name,tel,mail,fediverse_id, login_msg, logout_msg,
         is_activated, online_time, failed_attempts, created,last_posted, last_login,
         login_count, remove_on_logout, visible, admin, channel_id
         FROM users 
@@ -47,7 +47,7 @@ async def get_user_by_id(id : int):
 async def get_user_by_name(username : str):
     conn = await get_pg_connection()
     query = """
-        SELECT id, username, username_html,name,tel,mail,fediverse_id,
+        SELECT id, username, username_html,name,tel,mail,fediverse_id, login_msg, logout_msg,
         is_activated, online_time, failed_attempts, created,last_posted, last_login,
         login_count, remove_on_logout, visible, admin, channel_id
         FROM users 
