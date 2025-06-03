@@ -19,6 +19,8 @@ class SetUserRequest(BaseModel):
     name: Optional[str] = None
     tel: Optional[str] = None
     mail: Optional[str] = None
+    login_msg: Optional[str] = None
+    logout_msg: Optional[str] = None
     fediverse_id: Optional[str] = None
     is_activated: Optional[bool] = None
     password: Optional[str] = None
@@ -55,7 +57,6 @@ async def get_user_by_name(username : str):
     return result
 
 
-#password
 @router.put("/set_user/{id}/")
 async def update_user_by_id(id : int, data: SetUserRequest):
     conn = await get_pg_connection()
@@ -74,9 +75,11 @@ async def update_user_by_id(id : int, data: SetUserRequest):
             fediverse_id = COALESCE($4, fediverse_id),
             is_activated = COALESCE($5, is_activated),
             visible = COALESCE($6, visible),
-            password = COALESCE($7, password)
-        WHERE id = $8
-    """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, id)
+            password = COALESCE($7, password),
+            login_msg = COALESCE($8, login_msg)
+            logout_msg = COALESCE($9, logout_msg)
+        WHERE id = $10
+    """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, data.login_msg, data.logout_msg, id)
 
     return {"status": "updated", "id": id}
 
@@ -99,8 +102,10 @@ async def update_user_by_name(username : str, data: SetUserRequest):
             fediverse_id = COALESCE($4, fediverse_id),
             is_activated = COALESCE($5, is_activated),
             visible = COALESCE($6, visible),
-            password = COALESCE($7, password)
-        WHERE LOWER(username) = LOWER($8)
-    """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, username)
+            password = COALESCE($7, password),
+            login_msg = COALESCE($8, login_msg)
+            logout_msg = COALESCE($9, logout_msg)
+        WHERE LOWER(username) = LOWER($10)
+    """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, data.login_msg, data.logout_msg, username)
 
     return {"status": "updated", "username": username}

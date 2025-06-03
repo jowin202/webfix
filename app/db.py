@@ -75,6 +75,8 @@ async def pg_db_init():
                 tel VARCHAR(20),
                 mail VARCHAR(100),
                 fediverse_id VARCHAR(100),
+                login_msg VARCHAR DEFAULT 'has logged in.',
+                logout_msg VARCHAR DEFAULT 'has logged out.'
                 token VARCHAR(66),
                 is_activated BOOL NOT NULL DEFAULT true,
                 activation_token VARCHAR,
