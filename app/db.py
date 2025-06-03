@@ -183,13 +183,13 @@ async def pg_db_init():
 async def pg_db_remove():
     conn = await get_pg_connection() 
     try:
-        await conn.execute('''DROP TABLE users''')
-        await conn.execute('''DROP TABLE channels''')
-        await conn.execute('''DROP TABLE settings_str''')
-        await conn.execute('''DROP TABLE settings_bool ''')
-        await conn.execute('''DROP TABLE settings_int''')
-        await conn.execute('''DROP TABLE banned_ips''')
-        await conn.execute('''DROP TABLE private_messages''')
+        await conn.execute('''DROP TABLE users CASCADE''')
+        await conn.execute('''DROP TABLE channels CASCADE''')
+        await conn.execute('''DROP TABLE settings_str CASCADE''')
+        await conn.execute('''DROP TABLE settings_bool CASCADE''')
+        await conn.execute('''DROP TABLE settings_int CASCADE''')
+        await conn.execute('''DROP TABLE banned_ips CASCADE''')
+        await conn.execute('''DROP TABLE private_messages CASCADE''')
 
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)
