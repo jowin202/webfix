@@ -48,8 +48,17 @@ async def release_pg_connection(connection):
 async def pg_db_init():
     conn = await get_pg_connection() 
 
-    row = await conn.fetchrow("SELECT id FROM users WHERE username = 'admin'")
-    if row:
+
+    users_table = await conn.fetchval("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+              AND table_name = 'users'
+        )
+    """)
+
+    if users_table:
         await release_pg_connection(conn)
         return
 
