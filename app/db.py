@@ -47,23 +47,20 @@ async def release_pg_connection(connection):
 
 async def pg_db_init():
     conn = await get_pg_connection() 
+
+    row = await conn.fetchrow("SELECT id FROM users WHERE username = 'admin'")
+    if row:
+        await release_pg_connection(conn)
+        return
+
     try:
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS channels (
             id SERIAL PRIMARY KEY,
             name VARCHAR UNIQUE,
-            visible BOOL DEFAULT true
+            visible BOOL DEFAULT true,
+            owner INTEGER -- FK added later
             )
-        ''')
-        
-        await conn.execute('''
-            INSERT INTO channels (id,name) VALUES (1,'Main Channel')
-            ON CONFLICT (name) DO NOTHING;
-        ''')
-
-        await conn.execute('''
-            INSERT INTO channels (id,name) VALUES (2,'Secondary Channel')
-            ON CONFLICT (name) DO NOTHING;
         ''')
 
         await conn.execute('''
@@ -76,7 +73,7 @@ async def pg_db_init():
                 mail VARCHAR(100),
                 fediverse_id VARCHAR(100),
                 login_msg VARCHAR DEFAULT 'has logged in.',
-                logout_msg VARCHAR DEFAULT 'has logged out.'
+                logout_msg VARCHAR DEFAULT 'has logged out.',
                 token VARCHAR(66),
                 is_activated BOOL NOT NULL DEFAULT true,
                 activation_token VARCHAR,
@@ -96,6 +93,24 @@ async def pg_db_init():
                 FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE RESTRICT
             )
         ''')
+
+
+        await conn.execute('''
+            ALTER TABLE channels
+            ADD CONSTRAINT channels_owner_fkey FOREIGN KEY (owner) REFERENCES users(id) ON DELETE SET NULL
+        ''')
+
+
+        await conn.execute('''
+            INSERT INTO channels (id,name) VALUES (1,'Main Channel')
+            ON CONFLICT (name) DO NOTHING;
+        ''')
+
+        await conn.execute('''
+            INSERT INTO channels (id,name) VALUES (2,'Secondary Channel')
+            ON CONFLICT (name) DO NOTHING;
+        ''')
+
         
         # Insert default admin user if not exists
         await conn.execute('''
@@ -106,7 +121,6 @@ async def pg_db_init():
 
 
 
-        # Create settings table
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS settings_str (
                 key VARCHAR UNIQUE,
@@ -137,6 +151,18 @@ async def pg_db_init():
             )
         ''')
 
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS private_messages (
+            id SERIAL PRIMARY KEY,
+            sender INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            receiver INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            message TEXT NOT NULL,
+            sent_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        ''')
+
+
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)
     finally:
@@ -154,6 +180,7 @@ async def pg_db_remove():
         await conn.execute('''DROP TABLE settings_bool ''')
         await conn.execute('''DROP TABLE settings_int''')
         await conn.execute('''DROP TABLE banned_ips''')
+        await conn.execute('''DROP TABLE private_messages''')
 
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)
