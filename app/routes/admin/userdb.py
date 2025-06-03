@@ -76,7 +76,7 @@ async def update_user_by_id(id : int, data: SetUserRequest):
             is_activated = COALESCE($5, is_activated),
             visible = COALESCE($6, visible),
             password = COALESCE($7, password),
-            login_msg = COALESCE($8, login_msg)
+            login_msg = COALESCE($8, login_msg),
             logout_msg = COALESCE($9, logout_msg)
         WHERE id = $10
     """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, data.login_msg, data.logout_msg, id)
@@ -103,7 +103,7 @@ async def update_user_by_name(username : str, data: SetUserRequest):
             is_activated = COALESCE($5, is_activated),
             visible = COALESCE($6, visible),
             password = COALESCE($7, password),
-            login_msg = COALESCE($8, login_msg)
+            login_msg = COALESCE($8, login_msg),
             logout_msg = COALESCE($9, logout_msg)
         WHERE LOWER(username) = LOWER($10)
     """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, data.login_msg, data.logout_msg, username)

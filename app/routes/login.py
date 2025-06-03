@@ -22,16 +22,20 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     password = calc_hmac(form_data.password)
     valid = False
     token = token_generate()
+    login_msg = ""
+    channel_id = 1
     
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT id, password, is_activated, admin, channel_id 
+            SELECT id, password, is_activated, admin, channel_id, login_msg
             FROM users 
             WHERE LOWER(username) = LOWER($1)
         '''
         result = await conn.fetchrow(query, username)
         user_id = result['id']
+        login_msg = result['login_msg']
+        channel_id = result['channel_id']
 
         if not manager.get_setting("mandatory_user_verification") or result['is_activated']:
             if result and result['password'] == password:
@@ -48,6 +52,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
                 await conn.execute(query, token, username)
                 
                 # logout if logged in
+                await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'userlogin', 'username': username, 'msg': login_msg})}'")
                 await conn.execute(f"NOTIFY whisper_{user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login'})}'")
                 await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
             elif result and result['password'] != password:
@@ -99,16 +104,22 @@ async def login(username : str):
         if not manager.get_setting("allow_guest_login"):
             valid = False
         
+        login_msg = ""
 
         # create temp user
         if valid:
-            await conn.execute('''
-                INSERT INTO users (username, username_html, token, password,  created, last_posted, is_activated, remove_on_logout) 
-                VALUES ($1, '<b>' || $1::varchar || '</b>', $2, '', NOW(), NOW(), true, true)
-                ON CONFLICT (username) DO NOTHING
-            ''', username, token)
+            result = await conn.fetchrow('''
+                        INSERT INTO users (username, username_html, token, password,  created, last_posted, is_activated, remove_on_logout) 
+                        VALUES ($1, '<b>' || $1::varchar || '</b>', $2, '', NOW(), NOW(), true, true)
+                        ON CONFLICT (username) DO NOTHING
+                        RETURNING login_msg
+                    ''', username, token)
+            login_msg = result['login_msg']
 
 
+            # TODO default guest channel
+            channel_id = 1 # TODO
+            await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'userlogin', 'username': username, 'msg': login_msg})}'")
     except:
         valid = False
     finally:
@@ -117,7 +128,6 @@ async def login(username : str):
 
     if not valid:
         raise HTTPException(status_code=400, detail="Guest Login Error")
-    # TODO default guest channel
     return {"access_token": token, "channel_id": 1, "token_type": "bearer"}
 
 
@@ -158,9 +168,20 @@ async def logout_token(token : str):
         SET token = '',
         last_posted = NULL
         WHERE token = $1
-        RETURNING id
+        RETURNING id, username, channel_id, logout_msg
     '''
-    user_id = await conn.fetchval(query, token)
+    result = await conn.fetchrow(query, token)
+    if result:
+        user_id = result['id']
+        username = result['username']
+        channel_id = result['channel_id']
+        logout_msg = result['logout_msg']
+
+
+        # first logout, then close stream
+        await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'userlogout', 'username': username, 'msg': logout_msg})}'")
+        await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
+    
 
     # cleanup guests
     query = '''
@@ -170,8 +191,6 @@ async def logout_token(token : str):
     '''
     await conn.execute(query)
 
-    # first logout, then close stream
-    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
     await release_pg_connection(conn)   
     return True
 
@@ -185,10 +204,18 @@ async def logout(token: str = Depends(verify_token)):
         SET token = '',
         last_posted = NULL
         WHERE token = $1
-        RETURNING id
+        RETURNING id, username, channel_id, logout_msg
     '''
-    user_id = await conn.fetchval(query, token)
-    await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
+    result = await conn.fetchrow(query, token)
+    if result:
+        user_id = result['id']
+        username = result['username']
+        channel_id = result['channel_id']
+        logout_msg = result['logout_msg']
+
+        await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'userlogout', 'username': username, 'msg': logout_msg})}'")
+        await conn.execute(f"NOTIFY whisper_{user_id}, 'exit'")
+
 
     # cleanup guests
     query = '''

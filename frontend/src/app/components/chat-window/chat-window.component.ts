@@ -56,6 +56,18 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
       {
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['msg'] + "</i>"})
       }
+      // login and logout message from db
+      else if ("cat" in result && result['cat'] == "userlogin" && "username" in result && "msg" in result)
+      {
+        this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : result['username'] + " " + result['msg']})
+        this.update_online_list();
+      }
+      else if ("cat" in result && result['cat'] == "userlogout" && "username" in result && "msg" in result)
+      {
+        this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : result['username'] + " " + result['msg']})
+        this.update_online_list();
+      }
+
       else if ("cat" in result && result['cat'] == "userleft" && "username" in result)
       {
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['username'] + " left the channel</i>"})
