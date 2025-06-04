@@ -25,7 +25,7 @@
   <div class="sidebar">
     <div class="channel-switcher">
       <label for="channelSelect">Channel:</label>
-      <select id="channelSelect" (change)="switchChannel(channelSwitch.value)" #channelSwitch>
+      <select id="channelSelect" [(ngModel)]= "this.auth.channel_id" (change)="switchChannel(channelSwitch.value)" #channelSwitch>
         <option *ngFor="let channel of channels" [value]="channel.id">{{ channel.name }}</option>
       </select>
     </div>

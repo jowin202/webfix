@@ -105,7 +105,6 @@ export class AuthService {
         this.logged_in = true;
         this.router.navigate(['/chat']);
 
-        console.log("hahaha")
         if (typeof localStorage !== "undefined" && localStorage !== null) {
           if (remember)
             localStorage.setItem("token", response['access_token']);

@@ -94,7 +94,9 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
   {
         this.api.get("/api/data/online/", this.auth.token)
         .subscribe(result => {
-          this.onlineUsers = result
+          if (!("error_code" in result)){
+            this.onlineUsers = result
+          }
         });
   }
 
@@ -104,12 +106,13 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
   {
         this.api.get("/api/data/channels/", this.auth.token)
         .subscribe(result => {
-          this.channels = result
+          if (!("error_code" in result)){
+            this.channels = result
+          }
         });
   }
   switchChannel(data : any)
   {
-    console.log("testtest");
       this.api.post("/api/input/goto/" + data + "/", this.auth.token, {})
       .subscribe(result => {
           console.log(result);
@@ -125,6 +128,11 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
     else if (message == "/exit")
     {
       this.auth.do_logout();
+      return;
+    }
+    else if (message == "/clear")
+    {
+      this.messages = []
       return;
     }
 

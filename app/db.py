@@ -97,6 +97,8 @@ async def pg_db_init():
                 login_count INT DEFAULT 0,
                 remove_on_logout BOOL DEFAULT false,
                 visible BOOL DEFAULT true,
+                kicked_until TIMESTAMP DEFAULT '-infinity',
+                muted_until TIMESTAMP DEFAULT '-infinity',
                 admin INT NOT NULL DEFAULT 0,
                 channel_id INTEGER NOT NULL DEFAULT 1,
                 FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE RESTRICT
@@ -108,6 +110,9 @@ async def pg_db_init():
             ALTER TABLE channels
             ADD CONSTRAINT channels_owner_fkey FOREIGN KEY (owner) REFERENCES users(id) ON DELETE SET NULL
         ''')
+
+        # username unique case insensitive
+        await conn.execute('''CREATE UNIQUE INDEX unique_users ON users (LOWER(username));''')
 
 
         await conn.execute('''
