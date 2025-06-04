@@ -56,6 +56,11 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
       {
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['msg'] + "</i>"})
       }
+      //whisper
+      else if ("cat" in result && result['cat'] == "whisper" && "username" in result && "msg" in result)
+      {
+        this.messages.push({cat: "whisper", username: result['username'], "message" : result['msg']});
+      }
       // login and logout message from db
       else if ("cat" in result && result['cat'] == "userlogin" && "username" in result && "msg" in result)
       {
@@ -67,7 +72,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : result['username'] + " " + result['msg']})
         this.update_online_list();
       }
-
+      // channel switch (TODO)
       else if ("cat" in result && result['cat'] == "userleft" && "username" in result)
       {
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['username'] + " left the channel</i>"})
@@ -78,6 +83,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy{
         this.messages.push({cat: "statusmsg", username: "ChatBot", "message" : "<i>" + result['username'] + " enters the channel</i>"})
         this.update_online_list();
       }
+      // announcement
       else if ("cat" in result && result['cat'] == "announcement" && "msg" in result)
       {
         this.messages.push({cat: "announcement", username: "", "message" : "<i>" + result['msg'] + "</i>"})

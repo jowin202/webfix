@@ -72,37 +72,43 @@ async def whisper(to_username: str, message: str, request: Request):
 
     conn = await get_pg_connection()
     query = """
-        SELECT username, last_posted
+        SELECT username, last_posted,
+        CASE 
+            WHEN muted_until = 'infinity'::timestamp 
+                THEN 9223372036854775807
+            WHEN muted_until = '-infinity'::timestamp 
+                OR muted_until - NOW() < INTERVAL '0 seconds'
+                THEN 0
+            ELSE EXTRACT(EPOCH FROM (muted_until - NOW()))
+        END AS muted_seconds
         FROM users 
         WHERE id = $1
     """
     result = await conn.fetchrow(query, request.state.user_id)
-    from_name = result['username']
 
-    query = """
-        UPDATE users
-        SET online_time = online_time + EXTRACT(EPOCH FROM (NOW() - last_posted))::int,
-        last_posted = NOW()
-        WHERE id = $1
-    """
-    await conn.execute(query, request.state.user_id)
+    if result:
+        from_name = result['username']
+        muted_seconds = result['muted_seconds']
+        query = """
+            UPDATE users
+            SET online_time = online_time + EXTRACT(EPOCH FROM (NOW() - last_posted))::int,
+            last_posted = NOW()
+            WHERE id = $1
+        """
+        await conn.execute(query, request.state.user_id)
 
+        if muted_seconds <= 0:
+            query = """
+                SELECT id
+                FROM users 
+                WHERE username = $1
+            """
+            result = await conn.fetchrow(query, to_username)
 
-    query = """
-        SELECT id
-        FROM users 
-        WHERE username = $1
-    """
-    result = await conn.fetchrow(query, to_username)
-    try:
-        to_id = result['id']
-        await conn.execute(f"NOTIFY whisper_{to_id}, '{from_name} whispers: {message}'")
-    except:
-        pass
-    finally:
-        await release_pg_connection(conn)
-    
-    # todo error message
+            to_id = result['id']
+            await conn.execute(f"NOTIFY whisper_{to_id}, '{json.dumps({'cat': 'whisper', 'username': from_name, 'msg': message})}'")
+
+    await release_pg_connection(conn)
     return {"status": "notification sent", "message": message}
 
 

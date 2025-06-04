@@ -6,6 +6,9 @@
         <div *ngIf="message.cat == 'default'">
           <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
         </div>
+        <div *ngIf="message.cat == 'whisper'">
+          <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span [innerHTML]="message.message"></span>
+        </div>
         <div *ngIf="message.cat == 'statusmsg'">
           <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
         </div>
