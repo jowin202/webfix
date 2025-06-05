@@ -63,6 +63,24 @@ async def get_channels():
     return result
 
 
+
+
+# also check admin functions in userdb.py
+@router.get("/get_user_info/")
+async def get_user_info(request : Request):
+    conn = await get_pg_connection()
+    query = """
+        SELECT id, username, username_html, name, tel,mail, fediverse_id, login_msg, logout_msg,
+        online_time, created, last_posted, last_login, login_count, remove_on_logout, 
+        visible, kicked_until, muted_until, admin, channel_id
+        FROM users 
+        WHERE id = $1
+    """
+    result = await conn.fetchrow(query, request.state.user_id)
+    return result
+
+
+
 @router.post("/change_name_color/{fromhex}/{tohex}/")
 async def set_name_color(fromhex: str, tohex: str, request: Request):
     # Validate hex color format

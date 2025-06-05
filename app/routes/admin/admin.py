@@ -25,7 +25,7 @@ async def admin_activate_account(username : str):
     query = '''
         UPDATE users
         SET is_activated = true, activation_token = NULL
-        WHERE username = $1;
+        WHERE LOWER(username) = LOWER($1);
     '''
     try:
         await conn.execute(query, username)
@@ -63,7 +63,7 @@ async def kick_user(username : str, time : int):
             query = '''
                 UPDATE users
                 SET kicked_until = 'infinity'
-                WHERE username = $1;
+                WHERE LOWER(username) = LOWER($1);
                 '''
             await conn.execute(query, username)
     except:
@@ -83,14 +83,14 @@ async def mute_user(username : str, time : int):
             query = '''
                 UPDATE users
                 SET muted_until = NOW() + (INTERVAL '1 second' * $2)
-                WHERE username = $1;
+                WHERE LOWER(username) = LOWER($1);
                 '''
             await conn.execute(query, username, time)
         elif time == 0:
             query = '''
                 UPDATE users
                 SET muted_until = 'infinity'
-                WHERE username = $1;
+                WHERE LOWER(username) = LOWER($1);
                 '''
             await conn.execute(query, username)
     except Exception as e:
@@ -112,7 +112,7 @@ async def unkick_user(username : str):
         query = '''
             UPDATE users
             SET kicked_until = '-infinity'
-            WHERE username = $1;
+            WHERE LOWER(username) = LOWER($1);
             '''
         await conn.execute(query, username)
     except:
@@ -131,7 +131,7 @@ async def unmute_user(username : str):
         query = '''
             UPDATE users
             SET muted_until = '-infinity'
-            WHERE username = $1;
+            WHERE LOWER(username) = LOWER($1);
             '''
         await conn.execute(query, username)
     except:
@@ -139,4 +139,42 @@ async def unmute_user(username : str):
     finally:
         await release_pg_connection(conn)
     return status
+
+
+
+@router.delete("/delete_username/{username}/")
+async def delete_user(username: str):
+    conn = await get_pg_connection() 
+    status = True
+
+    try:
+        query = '''
+            DELETE FROM users
+            WHERE LOWER(username) = LOWER($1);
+        '''
+        await conn.execute(query, username)
+    except Exception as e:
+        status = False
+    finally:
+        await release_pg_connection(conn)
+    return status
+
+
+@router.delete("/delete_id/{user_id}/")
+async def delete_user_by_id(user_id: int):
+    conn = await get_pg_connection()
+    status = True
+
+    try:
+        query = '''
+            DELETE FROM users
+            WHERE id = $1;
+        '''
+        await conn.execute(query, user_id)
+    except Exception as e:
+        status = False
+    finally:
+        await release_pg_connection(conn)
+    return status
+
 

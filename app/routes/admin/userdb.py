@@ -29,6 +29,7 @@ class SetUserRequest(BaseModel):
 
 manager = SettingsManager()
 
+# also check function in data.py
 #TODO: IP
 @router.get("/get_user_by_id/")
 async def get_user_by_id(id : int):
