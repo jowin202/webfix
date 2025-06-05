@@ -36,7 +36,7 @@ async def get_user_by_id(id : int):
     query = """
         SELECT id, username, username_html,name,tel,mail,fediverse_id, login_msg, logout_msg,
         is_activated, online_time, failed_attempts, created,last_posted, last_login,
-        login_count, remove_on_logout, visible, admin, channel_id
+        login_count, remove_on_logout, visible, kicked_until, muted_until, admin, channel_id
         FROM users 
         WHERE id = $1
     """
@@ -49,7 +49,7 @@ async def get_user_by_name(username : str):
     query = """
         SELECT id, username, username_html,name,tel,mail,fediverse_id, login_msg, logout_msg,
         is_activated, online_time, failed_attempts, created,last_posted, last_login,
-        login_count, remove_on_logout, visible, admin, channel_id
+        login_count, remove_on_logout, visible, kicked_until, muted_until, admin, channel_id
         FROM users 
         WHERE LOWER(username) = LOWER($1)
     """
