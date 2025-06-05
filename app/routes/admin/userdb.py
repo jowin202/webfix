@@ -29,6 +29,19 @@ class SetUserRequest(BaseModel):
 
 manager = SettingsManager()
 
+
+
+@router.get("/get_all_users/")
+async def get_user_by_id():
+    conn = await get_pg_connection()
+    query = """
+        SELECT id, username, username_html
+        FROM users 
+    """
+    result = await conn.fetchrow(query)
+    return result
+
+
 # also check function in data.py
 #TODO: IP
 @router.get("/get_user_by_id/")
