@@ -55,7 +55,7 @@ async def kick_user(username : str, time : int):
         if time > 0:
             query = '''
                 UPDATE users
-                SET kicked_until = NOW() + $2
+                SET kicked_until = NOW() + (INTERVAL '1 second' * $2)
                 WHERE username = $1;
                 '''
             await conn.execute(query, username, time)
