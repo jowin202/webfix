@@ -91,7 +91,7 @@ async def activate_account(activation_token : str):
 
 
 
-@router.get("/login_page/")
+@router.get("/public_infos/")
 async def login_page_info():
 
     online_list = []
@@ -116,7 +116,7 @@ async def login_page_info():
             "user_verification_mail": manager.get_setting("user_verification_mail"), 
             "user_verification_fediverse": manager.get_setting("user_verification_fediverse"), 
             "display_online": True, 
-            "number_online": len(online_list), 
+            "num_users": len(online_list), 
             "show_rooms": True, 
             "channels": channels
             }

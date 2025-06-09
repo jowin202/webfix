@@ -15,15 +15,11 @@ import { ApiService } from './services/api.service';
 export class AppComponent implements OnInit {
   title = 'webfix';
 
-  loginData = {};
 
   constructor (public auth : AuthService, public api : ApiService){}
 
   ngOnInit(): void {
-        this.api.get("/api/register/login_page/", this.auth.token) // no token needed
-        .subscribe(result => {
-          this.loginData = result
-        });
+    this.api.update_public_infos();
   }
 
   

@@ -26,21 +26,24 @@
       </div>
     </form>
 
-    <div class="separator">or</div>
+    <ng-container *ngIf="this.api.public_infos['allow_guest_login']">
+      <div class="separator">or</div>
 
-    <form #form1="ngForm">
-      <div class="form-group">
-        <label for="guestName">Guest Name</label>
-        <input type="text" id="guestName" class="input-field" name="guestName" ngModel />
-      </div>
-      
-      <!-- Error message -->
-      <div class="error-message" *ngIf="this.auth.guest_error;">
-        ❌ Invalid username or username already taken.
-      </div>
-      <button class="guest-button" (click)="do_guest_login(form1.value)">Continue as Guest</button>
-    </form>
+      <form #form1="ngForm">
+        <div class="form-group">
+          <label for="guestName">Guest Name</label>
+          <input type="text" id="guestName" class="input-field" name="guestName" ngModel />
+        </div>
+        
+        <!-- Error message -->
+        <div class="error-message" *ngIf="this.auth.guest_error;">
+          ❌ Invalid username or username already taken.
+        </div>
+        <button class="guest-button" (click)="do_guest_login(form1.value)">Continue as Guest</button>
+      </form>
+    </ng-container>
 
-    <div class="online-count">🟢 13 users online</div>
+
+    <div class="online-count">🟢 {{ this.api.public_infos['num_users'] ?? -1  }} users online</div>
   </div>
 </div>

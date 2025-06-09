@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { RouterModule } from '@angular/router';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-login-window',
@@ -12,7 +13,7 @@ import { RouterModule } from '@angular/router';
 })
 export class LoginWindowComponent {
 
-  constructor (public auth : AuthService){}
+  constructor (public auth : AuthService, public api : ApiService){}
 
   do_page_login(value : any){
     this.auth.do_login(value.username, value.password, value.remember);

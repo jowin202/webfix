@@ -6,9 +6,8 @@ import { catchError, map, Observable, Observer } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-
-  
   constructor(private http: HttpClient) { }
+  public_infos : any = [];
 
 
 
@@ -214,6 +213,17 @@ export class ApiService {
     });
   }
 
+
+
+
+  update_public_infos()
+  {
+      this.get("/api/register/public_infos/", "") 
+      .subscribe(result => {
+        this.public_infos = result
+      });
+
+  }
 
 
   private isJson(json: any) {
