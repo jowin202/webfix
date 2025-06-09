@@ -6,6 +6,7 @@ import { AuthService } from './services/auth.service';
 import { inject } from '@angular/core';
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { UserMenuComponent } from './components/user-menu/user-menu.component';
 
 
 
@@ -29,5 +30,6 @@ export const routes: Routes = [
   { path: 'chat', component: ChatWindowComponent, canActivate: [canActivateChat] },
   { path: 'recovery/:token', component: RecoverPasswordComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent},
+  { path: 'menu', component: UserMenuComponent },
   { path: '**', component: LoginWindowComponent },
 ];

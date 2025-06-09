@@ -109,8 +109,8 @@ async def login(username : str):
         # create temp user
         if valid:
             result = await conn.fetchrow('''
-                        INSERT INTO users (username, username_html, token, password,  created, last_posted, is_activated, remove_on_logout) 
-                        VALUES ($1, '<b>' || $1::varchar || '</b>', $2, '', NOW(), NOW(), true, true)
+                        INSERT INTO users (username, username_html, token, password,  created, last_posted, last_login, is_activated, remove_on_logout, login_count) 
+                        VALUES ($1, '<b>' || $1::varchar || '</b>', $2, '', NOW(), NOW(), NOW(), true, true, 1)
                         ON CONFLICT (username) DO NOTHING
                         RETURNING login_msg
                     ''', username, token)

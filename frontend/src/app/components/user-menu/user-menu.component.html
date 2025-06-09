@@ -1,0 +1,55 @@
+<form #userMenuForm="ngForm">
+
+  <!-- Editable fields -->
+  <label>
+    Username HTML:
+    <input name="username_html" [value]="this.userinfo.username_html" ngModel />
+  </label><br />
+  <div [innerHTML]="this.userinfo.username_html"></div>
+  <br>
+
+  <label>
+    Name:
+    <input name="name" [value]="this.userinfo.name" ngModel />
+  </label><br />
+
+  <label>
+    Telephone:
+    <input name="tel" [value]="this.userinfo.tel" ngModel />
+  </label><br />
+
+  <label>
+    Email:
+    <input name="mail" type="email" [value]="this.userinfo.mail" ngModel />
+  </label><br />
+
+  <label>
+    Fediverse ID:
+    <input name="fediverse_id" [value]="this.userinfo.fediverse_id" ngModel />
+  </label><br />
+
+  <label>
+    Login Message:
+    <input name="login_msg" [value]="this.userinfo.login_msg" ngModel />
+  </label><br />
+
+  <label>
+    Logout Message:
+    <input name="logout_msg" [value]="this.userinfo.logout_msg" ngModel />
+  </label><br />
+
+
+  <!-- Read-only fields -->
+  <fieldset disabled>
+    <label>ID: {{ this.userinfo.id ?? -1}}</label><br />
+    <label>Username: {{ this.userinfo.username ?? ""}}</label><br />
+    <label>Online Time: {{ formatSeconds(this.userinfo.online_time) }}</label><br />
+    <label>Created: {{ formatTime(this.userinfo.created) }} </label><br />
+    <label>Last Posted:  {{ formatTime(this.userinfo.last_posted) }}</label><br />
+    <label>Last Login: {{ formatTime(this.userinfo.last_login) }}</label><br />
+    <label>Login Count: {{ this.userinfo.login_count ?? 0 }} </label><br />
+    <label>Registered: {{ this.userinfo.remove_on_logout ? "no" : "yes" }} </label>
+  </fieldset>
+  
+  <button type="submit" (click)="this.do_changes(userMenuForm.value)">Save</button>
+</form>

@@ -6,6 +6,18 @@ from helper import token_generate
 from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+from typing import Optional
+
+class UserFormData(BaseModel):
+    username_html: Optional[str] = None
+    name: Optional[str] = None
+    tel: Optional[str] = None
+    mail: Optional[str] = None
+    fediverse_id: Optional[str] = None
+    login_msg: Optional[str] = None
+    logout_msg: Optional[str] = None
+
+
 
 import re
 
@@ -72,13 +84,43 @@ async def get_user_info(request : Request):
     query = """
         SELECT id, username, username_html, name, tel,mail, fediverse_id, login_msg, logout_msg,
         online_time, created, last_posted, last_login, login_count, remove_on_logout, 
-        visible, kicked_until, muted_until, admin, channel_id
+        admin, channel_id
         FROM users 
         WHERE id = $1
     """
     result = await conn.fetchrow(query, request.state.user_id)
+    await release_pg_connection(conn)
     return result
 
+
+@router.post("/set_user_info/")
+async def set_user_info(data : UserFormData, request : Request):
+    conn = await get_pg_connection()
+
+    query = """
+        UPDATE users
+        SET 
+            username_html = COALESCE($1, username_html),
+            name          = COALESCE($2, name),
+            tel           = COALESCE($3, tel),
+            mail          = COALESCE($4, mail),
+            fediverse_id  = COALESCE($5, fediverse_id),
+            login_msg     = COALESCE($6, login_msg),
+            logout_msg    = COALESCE($7, logout_msg)
+        WHERE id = $8
+    """
+
+    await conn.execute(query,
+        data.username_html,
+        data.name,
+        data.tel,
+        data.mail,
+        data.fediverse_id,
+        data.login_msg,
+        data.logout_msg,
+        request.state.user_id
+    )
+    await release_pg_connection(conn)
 
 
 @router.post("/change_name_color/{fromhex}/{tohex}/")
