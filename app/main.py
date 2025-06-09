@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
 
     await manager.set_setting_if_not_exists("timeout_time", 180)
     await manager.set_setting_if_not_exists("pw_recovery_token_valid_time", 600)
+    await manager.set_setting_if_not_exists("pw_min_len", 3)
     
     await manager.set_setting_if_not_exists("announcement_general", "Welcome to our chat, $USER! ")
     await manager.set_setting_if_not_exists("announcement_guests", "Hello $USER, Please register your username!")

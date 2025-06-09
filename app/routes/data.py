@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from pydantic import BaseModel
-from helper import token_generate
+from helper import token_generate, calc_hmac
 from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -16,6 +16,7 @@ class UserFormData(BaseModel):
     fediverse_id: Optional[str] = None
     login_msg: Optional[str] = None
     logout_msg: Optional[str] = None
+    password: Optional[str] = None
 
 
 
@@ -95,7 +96,15 @@ async def get_user_info(request : Request):
 
 @router.post("/set_user_info/")
 async def set_user_info(data : UserFormData, request : Request):
+
+    # if password too short, then no db connection is made
+    if data.password and len(data.password) < manager.get_setting("pw_min_len"):
+        raise HTTPException(status_code=400, detail="Password too short")
+
     conn = await get_pg_connection()
+
+    if data.password:
+        data.password = calc_hmac(data.password)
 
     query = """
         UPDATE users
@@ -106,8 +115,9 @@ async def set_user_info(data : UserFormData, request : Request):
             mail          = COALESCE($4, mail),
             fediverse_id  = COALESCE($5, fediverse_id),
             login_msg     = COALESCE($6, login_msg),
-            logout_msg    = COALESCE($7, logout_msg)
-        WHERE id = $8
+            logout_msg    = COALESCE($7, logout_msg),
+            password      = COALESCE($8, password)
+        WHERE id = $9
     """
 
     await conn.execute(query,
@@ -118,6 +128,7 @@ async def set_user_info(data : UserFormData, request : Request):
         data.fediverse_id,
         data.login_msg,
         data.logout_msg,
+        data.password,
         request.state.user_id
     )
     await release_pg_connection(conn)

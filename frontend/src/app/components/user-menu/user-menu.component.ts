@@ -71,7 +71,8 @@ export class UserMenuComponent implements OnInit {
 
   do_changes(value : any)
   {
-    this.api.post("/api/data/set_user_info/", this.auth.token, {
+    console.log(value);
+    let body : any = {
       "username_html": value.username_html,
       "name": value.name,
       "tel": value.tel,
@@ -79,7 +80,12 @@ export class UserMenuComponent implements OnInit {
       "fediverse_id": value.fediverse_id,
       "login_msg": value.login_msg,
       "logout_msg": value.logout_msg
-    }).subscribe();
+    };
+    if (value.password != "")
+    {
+      body['password'] = value.password;
+    }
+    this.api.post("/api/data/set_user_info/", this.auth.token, body).subscribe();
   }
 
 

@@ -33,9 +33,12 @@ class RegisterUserRequest(BaseModel):
 async def register_user(data: RegisterUserRequest):
     conn = await get_pg_connection() 
     verification = manager.get_setting("mandatory_user_verification")
-    try:
-        if verification:
 
+    try:
+        if len(data.password) < manager.get_setting("pw_min_len"):
+            raise HTTPException(status_code=400, detail="Password too short")
+
+        if verification:
             activation_token = token_generate()
             await conn.execute('''
                 INSERT INTO users (username, username_html, name, tel, mail, fediverse_id, password, token, is_activated, activation_token) 

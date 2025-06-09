@@ -38,6 +38,17 @@
     <input name="logout_msg" [value]="this.userinfo.logout_msg" ngModel />
   </label><br />
 
+  <label>
+    Change Password:
+    <input type="password" name="password" ngModel />
+  </label><br />
+
+
+  <label>
+    Confirm Password:
+    <input type="password" name="password2" ngModel />
+  </label><br />
+
 
   <!-- Read-only fields -->
   <fieldset disabled>
@@ -51,5 +62,5 @@
     <label>Registered: {{ this.userinfo.remove_on_logout ? "no" : "yes" }} </label>
   </fieldset>
   
-  <button type="submit" (click)="this.do_changes(userMenuForm.value)">Save</button>
+  <button type="submit" [disabled]="userMenuForm.value.password != userMenuForm.value.password2" (click)="this.do_changes(userMenuForm.value)">Save</button>
 </form>
