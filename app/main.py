@@ -32,11 +32,19 @@ DB_CONFIG = {
     "port": os.getenv('POSTGRES_PORT', 5432) 
 }
 
-
+import time
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await initialize_connection_pool()
-    await pg_db_init()
+    db_is_ready = False
+    while not db_is_ready:
+        try:
+            time.sleep(1)
+            await initialize_connection_pool()
+            await pg_db_init()
+            db_is_ready = True
+        except:
+            pass
+
 
     manager = SettingsManager()
     await manager.initialize()

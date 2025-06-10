@@ -4,5 +4,4 @@ jinja2
 asyncpg
 python-multipart
 websockets
-wait-for-it
 Mastodon.py
