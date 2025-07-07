@@ -5,3 +5,5 @@ asyncpg
 python-multipart
 websockets
 Mastodon.py
+bs4
+bleach

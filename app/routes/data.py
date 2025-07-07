@@ -6,6 +6,11 @@ from helper import token_generate, calc_hmac
 from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+
+from bs4 import BeautifulSoup
+import bleach
+ALLOWED_TAGS = ["b", "i", "u", "em", "strong", "span", "br", "s"]
+
 from typing import Optional
 
 class UserFormData(BaseModel):
@@ -106,6 +111,22 @@ async def set_user_info(data : UserFormData, request : Request):
     if data.password:
         data.password = calc_hmac(data.password)
 
+
+    result = await conn.fetchrow("SELECT username FROM users WHERE id = $1", request.state.user_id)
+    if not result:
+        await release_pg_connection(conn)
+        raise HTTPException(status_code=404, detail="User not found")
+
+    current_username = result["username"]
+
+    # Step 4: Decide whether to update username_html
+    clean_username_html = None
+    if data.username_html:
+        sanitized_html = bleach.clean(data.username_html, tags=ALLOWED_TAGS, strip=True)
+        stripped_html = BeautifulSoup(sanitized_html, "html.parser").get_text()
+        if stripped_html == current_username:
+            clean_username_html = sanitized_html
+
     query = """
         UPDATE users
         SET 
@@ -121,7 +142,7 @@ async def set_user_info(data : UserFormData, request : Request):
     """
 
     await conn.execute(query,
-        data.username_html,
+        clean_username_html,
         data.name,
         data.tel,
         data.mail,
