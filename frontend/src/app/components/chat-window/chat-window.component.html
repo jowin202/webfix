@@ -1,13 +1,14 @@
 <div class="chat-container">
 
-  <div class="chat-window">
+  <div class="chat-window" *ngIf="this.showMenu == false;">
     <div class="messages" #messagesContainer>
       <div *ngFor="let message of messages" class="message">
         <div *ngIf="message.cat == 'default'">
           <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
         </div>
         <div *ngIf="message.cat == 'whisper'">
-          <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span [innerHTML]="message.message"></span>
+          <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span
+            [innerHTML]="message.message"></span>
         </div>
         <div *ngIf="message.cat == 'statusmsg'">
           <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
@@ -17,26 +18,33 @@
         </div>
       </div>
     </div>
-    <input
-      (keydown.enter)="sendMessage(inputField.value); inputField.value='';"
-      placeholder="Nachricht eingeben..."
-      class="message-input" #inputField
-    />
+    <input (keydown.enter)="sendMessage(inputField.value); inputField.value='';" placeholder="Message ..."
+      class="message-input" #inputField />
   </div>
 
 
+  <div class="chat-window" *ngIf="this.showMenu == true;">
+    <app-user-menu></app-user-menu>
+  </div>
+
   <div class="sidebar">
+    <button class="menu-button" (click)="this.showMenu = !this.showMenu">Menu</button>
+    <button class="menu-button" *ngIf="this.auth.admin_level >= 3">Admin Menu</button>
+
+
     <div class="channel-switcher">
       <label for="channelSelect">Channel:</label>
-      <select id="channelSelect" [(ngModel)]= "this.auth.channel_id" (change)="switchChannel(channelSwitch.value)" #channelSwitch>
+      <select id="channelSelect" [(ngModel)]="this.auth.channel_id" (change)="switchChannel(channelSwitch.value)"
+        #channelSwitch>
         <option *ngFor="let channel of channels" [value]="channel.id">{{ channel.name }}</option>
       </select>
     </div>
     <div class="user-list">
       <h3>Online</h3>
       <ul>
-        <li *ngFor="let user of onlineUsers"><span [innerHTML]="user.username_html"></span></li>
+        <li *ngFor="let user of onlineUsers" (click)="addName(user.username)"><span
+            [innerHTML]="user.username_html"></span></li>
       </ul>
     </div>
-    </div>
+  </div>
 </div>
