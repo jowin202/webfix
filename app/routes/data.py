@@ -111,7 +111,9 @@ async def set_user_info(data : UserFormData, request : Request):
 
     conn = await get_pg_connection()
 
+    change_pw = False
     if data.password:
+        change_pw = True
         data.password = calc_hmac(data.password)
 
 
@@ -123,12 +125,15 @@ async def set_user_info(data : UserFormData, request : Request):
     current_username = result["username"]
 
     # Step 4: Decide whether to update username_html
+    error_at_html_user = False
     clean_username_html = None
     if data.username_html:
         sanitized_html = bleach.clean(data.username_html, tags=ALLOWED_TAGS, strip=True)
         stripped_html = BeautifulSoup(sanitized_html, "html.parser").get_text()
         if stripped_html == current_username:
             clean_username_html = sanitized_html
+        else:
+            error_at_html_user = True
 
     query = """
         UPDATE users
@@ -156,6 +161,7 @@ async def set_user_info(data : UserFormData, request : Request):
         request.state.user_id
     )
     await release_pg_connection(conn)
+    return {"change_pw": change_pw, "error_at_html_user": error_at_html_user}
 
 
 @router.post("/change_name_color/{fromhex}/{tohex}/")

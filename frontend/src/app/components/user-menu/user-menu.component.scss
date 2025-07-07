@@ -1,0 +1,35 @@
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  width: 150px;
+  /* fixed width for label alignment */
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.form-group input {
+  flex: 1;
+  padding: 6px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  /* separates left and right */
+  align-items: center;
+  margin-top: 20px;
+}
+
+.form-note {
+  font-size: 0.9em;
+  color: #555;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}

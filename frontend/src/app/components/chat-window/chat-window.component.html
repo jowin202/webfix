@@ -30,7 +30,7 @@
   <div class="sidebar">
     <button class="menu-button" (click)="this.showMenu = !this.showMenu;">{{ this.showMenu ? "Close" : ""}} Menu</button>
     <button class="menu-button" *ngIf="this.auth.admin_level >= 3">Admin Menu</button>
-
+    <button class="menu-button" (click)="this.auth.do_logout();">Logout</button>
 
     <div class="channel-switcher">
       <label for="channelSelect">Channel:</label>
