@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +13,8 @@ import { AuthService } from '../../services/auth.service';
 export class UserMenuComponent implements OnInit {
 
   constructor(public auth: AuthService, public api : ApiService){}
+
+  @Output() closeEvent = new EventEmitter<string>();
 
   ngOnInit(): void {
       this.api.get("/api/data/get_user_info/", this.auth.token) 

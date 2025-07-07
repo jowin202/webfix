@@ -5,64 +5,37 @@
 
     <div class="form-group">
       <label for="username_html">Username HTML:</label>
-      <input
-        id="username_html"
-        name="username_html"
-        [value]="userinfo.username_html"
-        ngModel
-      />
-      <div class="preview" [innerHTML]="userinfo.username_html"></div>
+      <input id="username_html" name="username_html" [ngModel]="userinfo.username_html" ngModel />
     </div>
 
     <div class="form-group">
       <label for="name">Name:</label>
-      <input id="name" name="name" [value]="userinfo.name" ngModel />
+      <input id="name" name="name" [ngModel]="userinfo.name" ngModel />
     </div>
 
     <div class="form-group">
       <label for="tel">Telephone:</label>
-      <input id="tel" name="tel" [value]="userinfo.tel" ngModel />
+      <input id="tel" name="tel" [ngModel]="userinfo.tel" ngModel />
     </div>
 
     <div class="form-group">
       <label for="mail">Email:</label>
-      <input
-        id="mail"
-        name="mail"
-        type="email"
-        [value]="userinfo.mail"
-        ngModel
-      />
+      <input id="mail" name="mail" type="email" [ngModel]="userinfo.mail" ngModel />
     </div>
 
     <div class="form-group">
       <label for="fediverse_id">Fediverse ID:</label>
-      <input
-        id="fediverse_id"
-        name="fediverse_id"
-        [value]="userinfo.fediverse_id"
-        ngModel
-      />
+      <input id="fediverse_id" name="fediverse_id" [ngModel]="userinfo.fediverse_id" ngModel />
     </div>
 
     <div class="form-group">
       <label for="login_msg">Login Message:</label>
-      <input
-        id="login_msg"
-        name="login_msg"
-        [value]="userinfo.login_msg"
-        ngModel
-      />
+      <input id="login_msg" name="login_msg" [ngModel]="userinfo.login_msg" ngModel />
     </div>
 
     <div class="form-group">
       <label for="logout_msg">Logout Message:</label>
-      <input
-        id="logout_msg"
-        name="logout_msg"
-        [value]="userinfo.logout_msg"
-        ngModel
-      />
+      <input id="logout_msg" name="logout_msg" [ngModel]="userinfo.logout_msg" ngModel />
     </div>
 
     <div class="form-group">
@@ -74,26 +47,29 @@
       <label for="password2">Confirm Password:</label>
       <input id="password2" type="password" name="password2" ngModel />
     </div>
+
+    <button type="submit" [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
+      Save
+    </button>
+    <button (click)="this.closeEvent.emit();">
+      Close
+    </button>
+
   </fieldset>
 
   <!-- Read-only Fields -->
   <fieldset disabled>
     <legend>Account Metadata</legend>
 
-    <p><strong>ID:</strong> {{ userinfo.id ?? -1 }}</p>
-    <p><strong>Username:</strong> {{ userinfo.username ?? '' }}</p>
-    <p><strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}</p>
-    <p><strong>Created:</strong> {{ formatTime(userinfo.created) }}</p>
-    <p><strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}</p>
-    <p><strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}</p>
-    <p><strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}</p>
-    <p><strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}</p>
+    <strong>ID:</strong> {{ userinfo.id ?? -1 }}<br>
+    <strong>Username:</strong> {{ userinfo.username ?? '' }}<br>
+    <strong>Username (HTML): </strong> <span [innerHTML]="userinfo.username_html"></span><br>
+    <strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}<br>
+    <strong>Created:</strong> {{ formatTime(userinfo.created) }}<br>
+    <strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}<br>
+    <strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}<br>
+    <strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}<br>
+    <strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
   </fieldset>
 
-  <button
-    type="submit"
-    [disabled]="userMenuForm.value.password !== userMenuForm.value.password2"
-  >
-    Save
-  </button>
 </form>
