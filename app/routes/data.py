@@ -7,6 +7,8 @@ from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 
+from settings import SettingsManager
+
 from bs4 import BeautifulSoup
 import bleach
 ALLOWED_TAGS = ["b", "i", "u", "em", "strong", "span", "br", "s"]
@@ -28,6 +30,7 @@ class UserFormData(BaseModel):
 import re
 
 router = APIRouter()
+manager = SettingsManager()
 
 @router.get("/toplist/")
 async def get_toplist():
