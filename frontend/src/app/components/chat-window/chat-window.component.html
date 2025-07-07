@@ -28,7 +28,7 @@
   </div>
 
   <div class="sidebar">
-    <button class="menu-button" (click)="this.showMenu = !this.showMenu">Menu</button>
+    <button class="menu-button" (click)="this.showMenu = !this.showMenu;">{{ this.showMenu ? "Close" : ""}} Menu</button>
     <button class="menu-button" *ngIf="this.auth.admin_level >= 3">Admin Menu</button>
 
 

@@ -33,7 +33,6 @@ interface Channels {
 export class ChatWindowComponent implements OnInit, OnDestroy {
   constructor(public api: ApiService, public auth: AuthService) { }
 
-  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   channels: Channels[] = [];
   onlineUsers: OnlineUsers[] = [];
@@ -140,7 +139,10 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
 
   @ViewChild('inputField') inputField!: ElementRef<HTMLInputElement>;
   addName(name: string) {
-    this.inputField.nativeElement.value += name;
+    if (this.inputField?.nativeElement) {
+      this.inputField.nativeElement.value += name;
+      this.inputField.nativeElement.focus();
+    }
   }
 
   ngOnDestroy() {
@@ -151,12 +153,16 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
     this.scrollToBottom();
   }
 
+
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   private scrollToBottom(): void {
-    try {
-      this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
-    } catch (err) {
-      console.error('Scroll error:', err);
+    const container = this.messagesContainer?.nativeElement;
+    if (container) {
+      try {
+        this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+      } catch (err) {
+        console.error('Scroll error:', err);
+      }
     }
   }
-
 }
