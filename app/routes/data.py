@@ -11,7 +11,7 @@ from settings import SettingsManager
 
 from bs4 import BeautifulSoup
 import bleach
-ALLOWED_TAGS = ["b", "i", "u", "em", "strong", "span", "br", "s"]
+ALLOWED_TAGS = ["b", "i", "u", "em", "strong", "span", "br", "s", "font"]
 
 from typing import Optional
 
