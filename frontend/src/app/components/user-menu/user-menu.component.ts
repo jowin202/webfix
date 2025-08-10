@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
@@ -6,7 +5,7 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-user-menu',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './user-menu.component.html',
   styleUrl: './user-menu.component.scss'
 })

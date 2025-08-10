@@ -3,12 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { ChatWindowComponent } from "./components/chat-window/chat-window.component";
 import { LoginWindowComponent } from "./components/login-window/login-window.component";
 import { AuthService } from './services/auth.service';
-import { CommonModule } from '@angular/common';
 import { ApiService } from './services/api.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

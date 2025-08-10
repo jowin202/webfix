@@ -1,64 +1,57 @@
-<ng-container *ngIf="this.global_error">
+@if (this.global_error) {
   Error occured!<br>
   <button type="button" (click)="closeEvent.emit()">Close</button>
-</ng-container>
-<ng-container *ngIf="!this.global_error">
+}
+@if (!this.global_error) {
   <form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
     <!-- Editable Fields -->
     <fieldset>
       <legend>User Information</legend>
-
       <div class="form-group">
         <label for="username_html">Username (HTML):</label>
         <input id="username_html" name="username_html" [ngModel]="userinfo.username_html" ngModel />
       </div>
-
       <div class="form-group">
         <label for="name">Name:</label>
         <input id="name" name="name" [ngModel]="userinfo.name" ngModel />
       </div>
-
       <div class="form-group">
         <label for="tel">Telephone:</label>
         <input id="tel" name="tel" [ngModel]="userinfo.tel" ngModel />
       </div>
-
       <div class="form-group">
         <label for="mail">Email:</label>
         <input id="mail" name="mail" type="email" [ngModel]="userinfo.mail" ngModel />
       </div>
-
       <div class="form-group">
         <label for="fediverse_id">Fediverse ID:</label>
         <input id="fediverse_id" name="fediverse_id" [ngModel]="userinfo.fediverse_id" ngModel />
       </div>
-
       <div class="form-group">
         <label for="login_msg">Login Message:</label>
         <input id="login_msg" name="login_msg" [ngModel]="userinfo.login_msg" ngModel />
       </div>
-
       <div class="form-group">
         <label for="logout_msg">Logout Message:</label>
         <input id="logout_msg" name="logout_msg" [ngModel]="userinfo.logout_msg" ngModel />
       </div>
-
       <div class="form-group">
         <label for="password">Change Password:</label>
         <input id="password" type="password" name="password" ngModel />
       </div>
-
       <div class="form-group">
         <label for="password2">Confirm Password:</label>
         <input id="password2" type="password" name="password2" ngModel />
       </div>
-
       <div class="form-actions">
         <span class="form-note">
-          <div *ngIf="this.error_at_html_user">Error: Username must match with HTML</div>
-          <div *ngIf="this.change_pw">Password changed</div>
+          @if (this.error_at_html_user) {
+            <div>Error: Username must match with HTML</div>
+          }
+          @if (this.change_pw) {
+            <div>Password changed</div>
+          }
         </span>
-
         <div class="button-group">
           <button type="submit" [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
             Save
@@ -66,13 +59,10 @@
           <button type="button" (click)="closeEvent.emit()">Close</button>
         </div>
       </div>
-
     </fieldset>
-
     <!-- Read-only Fields -->
     <fieldset disabled>
       <legend>Account Metadata</legend>
-
       <strong>ID:</strong> {{ userinfo.id ?? -1 }}<br>
       <strong>Username:</strong> {{ userinfo.username ?? '' }}<br>
       <strong>Username (HTML): </strong> <span [innerHTML]="userinfo.username_html"></span><br>
@@ -83,6 +73,5 @@
       <strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}<br>
       <strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
     </fieldset>
-
   </form>
-</ng-container>
+}

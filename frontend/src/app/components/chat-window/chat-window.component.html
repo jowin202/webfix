@@ -1,49 +1,69 @@
 <div class="chat-container">
 
-  <div class="chat-window" *ngIf="this.showMenu == false;">
-    <div class="messages" #messagesContainer>
-      <div *ngFor="let message of messages" class="message">
-        <div *ngIf="message.cat == 'default'">
-          <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+  @if (this.showMenu == false;) {
+    <div class="chat-window">
+      <div class="messages" #messagesContainer>
+        @for (message of messages; track message) {
+          <div class="message">
+            @if (message.cat == 'default') {
+              <div>
+                <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+              </div>
+            }
+            @if (message.cat == 'whisper') {
+              <div>
+                <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span
+              [innerHTML]="message.message"></span>
+            </div>
+          }
+          @if (message.cat == 'statusmsg') {
+            <div>
+              <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+            </div>
+          }
+          @if (message.cat == 'announcement') {
+            <div>
+              <span [innerHTML]="message.message"></span>
+            </div>
+          }
         </div>
-        <div *ngIf="message.cat == 'whisper'">
-          <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span
-            [innerHTML]="message.message"></span>
-        </div>
-        <div *ngIf="message.cat == 'statusmsg'">
-          <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
-        </div>
-        <div *ngIf="message.cat == 'announcement'">
-          <span [innerHTML]="message.message"></span>
-        </div>
-      </div>
+      }
     </div>
     <input (keydown.enter)="sendMessage(inputField.value); inputField.value='';" placeholder="Message ..."
       class="message-input" #inputField />
-  </div>
+    </div>
+  }
 
 
-  <div class="chat-window" *ngIf="this.showMenu == true;">
-    <app-user-menu (closeEvent)="this.showMenu = false;"></app-user-menu>
-  </div>
+  @if (this.showMenu == true;) {
+    <div class="chat-window">
+      <app-user-menu (closeEvent)="this.showMenu = false;"></app-user-menu>
+    </div>
+  }
 
   <div class="sidebar">
     <button class="menu-button" (click)="this.showMenu = !this.showMenu;">{{ this.showMenu ? "Close" : ""}} Menu</button>
-    <button class="menu-button" *ngIf="this.auth.admin_level >= 3">Admin Menu</button>
+    @if (this.auth.admin_level >= 3) {
+      <button class="menu-button">Admin Menu</button>
+    }
     <button class="menu-button" (click)="this.auth.do_logout();">Logout</button>
 
     <div class="channel-switcher">
       <label for="channelSelect">Channel:</label>
       <select id="channelSelect" [(ngModel)]="this.auth.channel_id" (change)="switchChannel(channelSwitch.value)"
         #channelSwitch>
-        <option *ngFor="let channel of channels" [value]="channel.id">{{ channel.name }}</option>
+        @for (channel of channels; track channel) {
+          <option [value]="channel.id">{{ channel.name }}</option>
+        }
       </select>
     </div>
     <div class="user-list">
       <h3>Online</h3>
       <ul>
-        <li *ngFor="let user of onlineUsers" (click)="addName(user.username)"><span
-            [innerHTML]="user.username_html"></span></li>
+        @for (user of onlineUsers; track user) {
+          <li (click)="addName(user.username)"><span
+          [innerHTML]="user.username_html"></span></li>
+        }
       </ul>
     </div>
   </div>

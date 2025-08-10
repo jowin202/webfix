@@ -5,7 +5,7 @@
       <div class="form-group">
         <label for="regUsername">Username (max 12 chars, no special chars)</label>
         <input type="text" id="regUsername" class="input-field" name="username"
-               ngModel pattern="^[a-zA-Z0-9]{1,12}$" required />
+          ngModel pattern="^[a-zA-Z0-9]{1,12}$" required />
       </div>
 
       <div class="form-group">
@@ -40,24 +40,32 @@
         <input type="password" id="confPassword" class="input-field" name="confPassword" [(ngModel)]="confPass" required/>
       </div>
 
-      <div class="error-message" *ngIf="pass !== confPass && pass.length > 0">
-        ❌ Passwords do not match.
-      </div>
+      @if (pass !== confPass && pass.length > 0) {
+        <div class="error-message">
+          ❌ Passwords do not match.
+        </div>
+      }
 
       <!-- Verification Required Error -->
-      <div class="error-message" *ngIf="false">
-        ❌ You must provide either an email or a Fediverse ID for verification.
-      </div>
+      @if (false) {
+        <div class="error-message">
+          ❌ You must provide either an email or a Fediverse ID for verification.
+        </div>
+      }
 
 
-      <div class="error-message" *ngIf="this.success">
-        ✅ Registration successfull
-      </div>
-      <div class="error-message" *ngIf="this.error">
-        ❌ Registration Error
-      </div>
-    <button class="login-button" [disabled]="pass !== confPass || pass.length < 4" (click)="do_register(registerForm.value)">Register</button>
-    <button type="button" class="guest-button" [routerLink]="'/'">Back to Login</button>
+      @if (this.success) {
+        <div class="error-message">
+          ✅ Registration successfull
+        </div>
+      }
+      @if (this.error) {
+        <div class="error-message">
+          ❌ Registration Error
+        </div>
+      }
+      <button class="login-button" [disabled]="pass !== confPass || pass.length < 4" (click)="do_register(registerForm.value)">Register</button>
+      <button type="button" class="guest-button" [routerLink]="'/'">Back to Login</button>
     </form>
   </div>
 </div>

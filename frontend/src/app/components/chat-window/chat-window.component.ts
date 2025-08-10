@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
@@ -26,7 +25,7 @@ interface Channels {
 
 @Component({
   selector: 'app-chat-window',
-  imports: [CommonModule, FormsModule, UserMenuComponent],
+  imports: [FormsModule, UserMenuComponent],
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.scss'
 })
