@@ -11,7 +11,18 @@ from settings import SettingsManager
 
 from bs4 import BeautifulSoup
 import bleach
+
+
 ALLOWED_TAGS = ["b", "i", "u", "em", "strong", "span", "br", "s", "font"]
+
+ALLOWED_ATTRIBUTES = {
+    **bleach.sanitizer.ALLOWED_ATTRIBUTES,
+    "font": ["color"],
+    "span": ["style"],
+}
+
+
+
 
 from typing import Optional
 
@@ -128,7 +139,7 @@ async def set_user_info(data : UserFormData, request : Request):
     error_at_html_user = False
     clean_username_html = None
     if data.username_html:
-        sanitized_html = bleach.clean(data.username_html, tags=ALLOWED_TAGS, strip=True)
+        sanitized_html = bleach.clean(data.username_html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True)
         stripped_html = BeautifulSoup(sanitized_html, "html.parser").get_text()
         if stripped_html == current_username:
             clean_username_html = sanitized_html
