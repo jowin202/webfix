@@ -1,9 +1,9 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Observable } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserMenuComponent } from "../user-menu/user-menu.component";
+import { AdminMenuComponent } from '../admin-menu/admin-menu.component';
 
 
 interface ChatMessage {
@@ -25,7 +25,7 @@ interface Channels {
 
 @Component({
   selector: 'app-chat-window',
-  imports: [FormsModule, UserMenuComponent],
+  imports: [FormsModule, UserMenuComponent, AdminMenuComponent],
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.scss'
 })
@@ -38,6 +38,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
 
   showMenu: Boolean = false;
+  showAdminMenu: Boolean = false;
 
   ngOnInit() {
     this.connect_websocket();

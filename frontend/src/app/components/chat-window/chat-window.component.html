@@ -1,6 +1,6 @@
 <div class="chat-container">
 
-  @if (this.showMenu == false;) {
+  @if (this.showMenu == false && this.showAdminMenu == false;) {
     <div class="chat-window">
       <div class="messages" #messagesContainer>
         @for (message of messages; track message) {
@@ -41,10 +41,16 @@
     </div>
   }
 
+  @if (this.showAdminMenu == true;) {
+    <div class="chat-window">
+      <app-admin-menu (closeEvent)="this.showMenu = false;"></app-admin-menu>
+    </div>
+  }
+
   <div class="sidebar">
     <button class="menu-button" (click)="this.showMenu = !this.showMenu;">{{ this.showMenu ? "Close" : ""}} Menu</button>
     @if (this.auth.admin_level >= 3) {
-      <button class="menu-button">Admin Menu</button>
+      <button class="menu-button" (click)="this.showAdminMenu = !this.showAdminMenu;">{{ this.showAdminMenu ? "Close" : ""}} Admin Menu</button>
     }
     <button class="menu-button" (click)="this.auth.do_logout();">Logout</button>
 

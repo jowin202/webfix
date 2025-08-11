@@ -1,77 +1,92 @@
-@if (this.global_error) {
-  Error occured!<br>
-  <button type="button" (click)="closeEvent.emit()">Close</button>
-}
-@if (!this.global_error) {
-  <form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
-    <!-- Editable Fields -->
+<form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
+  <!-- Editable Fields -->
+  <fieldset>
+    <legend>User Information</legend>
+    <div class="form-group">
+      <label for="username_html">Username (HTML):</label>
+      <input id="username_html" name="username_html" [ngModel]="userinfo.username_html" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="name">Name:</label>
+      <input id="name" name="name" [ngModel]="userinfo.name" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="tel">Telephone:</label>
+      <input id="tel" name="tel" [ngModel]="userinfo.tel" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="mail">Email:</label>
+      <input id="mail" name="mail" type="email" [ngModel]="userinfo.mail" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="fediverse_id">Fediverse ID:</label>
+      <input id="fediverse_id" name="fediverse_id" [ngModel]="userinfo.fediverse_id" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="login_msg">Login Message:</label>
+      <input id="login_msg" name="login_msg" [ngModel]="userinfo.login_msg" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="logout_msg">Logout Message:</label>
+      <input id="logout_msg" name="logout_msg" [ngModel]="userinfo.logout_msg" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="password">Change Password:</label>
+      <input id="password" type="password" name="password" ngModel />
+    </div>
+    <div class="form-group">
+      <label for="password2">Confirm Password:</label>
+      <input id="password2" type="password" name="password2" ngModel />
+    </div>
+    <div class="form-actions">
+      <span class="form-note">
+        @if (this.error_at_html_user) {
+        <div>Error: Username must match with HTML</div>
+        }
+        @if (this.change_pw) {
+        <div>Password changed</div>
+        }
+      </span>
+      <div class="button-group">
+        <button type="submit" [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
+          Save
+        </button>
+        <button type="button" (click)="closeEvent.emit()">Close</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <form #gradientForm="ngForm" (ngSubmit)="this.do_color_gradient(gradientForm.value)">
     <fieldset>
-      <legend>User Information</legend>
+      <legend>Color Gradient</legend>
+
       <div class="form-group">
-        <label for="username_html">Username (HTML):</label>
-        <input id="username_html" name="username_html" [ngModel]="userinfo.username_html" ngModel />
+        <label for="col1">First Color:</label>
+        <input id="col1" name="col1" ngModel />
       </div>
+
       <div class="form-group">
-        <label for="name">Name:</label>
-        <input id="name" name="name" [ngModel]="userinfo.name" ngModel />
+        <label for="col2">Second Color:</label>
+        <input id="col2" name="col2" ngModel />
       </div>
-      <div class="form-group">
-        <label for="tel">Telephone:</label>
-        <input id="tel" name="tel" [ngModel]="userinfo.tel" ngModel />
-      </div>
-      <div class="form-group">
-        <label for="mail">Email:</label>
-        <input id="mail" name="mail" type="email" [ngModel]="userinfo.mail" ngModel />
-      </div>
-      <div class="form-group">
-        <label for="fediverse_id">Fediverse ID:</label>
-        <input id="fediverse_id" name="fediverse_id" [ngModel]="userinfo.fediverse_id" ngModel />
-      </div>
-      <div class="form-group">
-        <label for="login_msg">Login Message:</label>
-        <input id="login_msg" name="login_msg" [ngModel]="userinfo.login_msg" ngModel />
-      </div>
-      <div class="form-group">
-        <label for="logout_msg">Logout Message:</label>
-        <input id="logout_msg" name="logout_msg" [ngModel]="userinfo.logout_msg" ngModel />
-      </div>
-      <div class="form-group">
-        <label for="password">Change Password:</label>
-        <input id="password" type="password" name="password" ngModel />
-      </div>
-      <div class="form-group">
-        <label for="password2">Confirm Password:</label>
-        <input id="password2" type="password" name="password2" ngModel />
-      </div>
+
       <div class="form-actions">
-        <span class="form-note">
-          @if (this.error_at_html_user) {
-            <div>Error: Username must match with HTML</div>
-          }
-          @if (this.change_pw) {
-            <div>Password changed</div>
-          }
-        </span>
-        <div class="button-group">
-          <button type="submit" [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
-            Save
-          </button>
-          <button type="button" (click)="closeEvent.emit()">Close</button>
-        </div>
+        <button type="submit">Submit</button>
       </div>
-    </fieldset>
-    <!-- Read-only Fields -->
-    <fieldset disabled>
-      <legend>Account Metadata</legend>
-      <strong>ID:</strong> {{ userinfo.id ?? -1 }}<br>
-      <strong>Username:</strong> {{ userinfo.username ?? '' }}<br>
-      <strong>Username (HTML): </strong> <span [innerHTML]="userinfo.username_html"></span><br>
-      <strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}<br>
-      <strong>Created:</strong> {{ formatTime(userinfo.created) }}<br>
-      <strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}<br>
-      <strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}<br>
-      <strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}<br>
-      <strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
     </fieldset>
   </form>
-}
+
+  <!-- Read-only Fields -->
+  <fieldset disabled>
+    <legend>Account Metadata</legend>
+    <strong>ID:</strong> {{ userinfo.id ?? -1 }}<br>
+    <strong>Username:</strong> {{ userinfo.username ?? '' }}<br>
+    <strong>Username (HTML): </strong> <span [innerHTML]="userinfo.username_html"></span><br>
+    <strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}<br>
+    <strong>Created:</strong> {{ formatTime(userinfo.created) }}<br>
+    <strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}<br>
+    <strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}<br>
+    <strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}<br>
+    <strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
+  </fieldset>
+</form>
