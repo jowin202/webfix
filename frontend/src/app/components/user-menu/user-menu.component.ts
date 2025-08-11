@@ -17,6 +17,8 @@ export class UserMenuComponent implements OnInit {
   change_pw: Boolean = false;
   error_at_html_user: Boolean = false;
 
+  color_gradient_error : Boolean | null = null;
+
 
   ngOnInit(): void {
     //TODO: error handling in API
@@ -98,8 +100,8 @@ export class UserMenuComponent implements OnInit {
   do_color_gradient(value : any)
   {
     this.api.post("/api/data/change_name_color/" + value.col1 + "/" + value.col2 + "/", this.auth.token, {}).subscribe(result => {
-      this.change_pw = result['change_pw'];
-      this.error_at_html_user = result['error_at_html_user'];
+      this.color_gradient_error = !result['success'];
+      console.log(this.color_gradient_error);
     });
   }
 

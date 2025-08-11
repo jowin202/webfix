@@ -17,6 +17,7 @@ export class AdminMenuComponent {
   menu_values : any = {
   };
 
+
   ngOnInit(): void {
     this.api.post("/api/admin/settings/get_settings/", this.auth.token,[
       'allow_guest_login',
@@ -27,7 +28,10 @@ export class AdminMenuComponent {
       'announcement_general',
       'announcement_guests',
       'announcement_registered_users',
-      'announcement_team'
+      'announcement_team',
+      'timeout_time',
+      'pw_recovery_token_valid_time',
+      'pw_min_len'
     ])
       .subscribe(result => {
         this.menu_values = result
@@ -45,7 +49,10 @@ export class AdminMenuComponent {
       'announcement_general': value.announcement_general,
       'announcement_guests': value.announcement_guests,
       'announcement_registered_users': value.announcement_registered_users,
-      'announcement_team': value.announcement_team
+      'announcement_team': value.announcement_team,
+      'timeout_time': value.timeout_time as number,
+      'pw_recovery_token_valid_time': value.pw_recovery_token_valid_time as number,
+      'pw_min_len': value.pw_min_len as number
   })
       .subscribe(result => {
         console.log(result);

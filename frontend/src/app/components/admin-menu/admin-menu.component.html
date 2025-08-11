@@ -27,34 +27,34 @@
         [ngModel]="menu_values?.user_verification_fediverse" />
     </div>
     <div class="form-group">
-      <label for="announcement_general">Announcement (for all users):</label><br>
+      <label for="announcement_general">Announcement (for all users):</label>
       <textarea id="announcement_general" name="announcement_general" rows="4" cols="40" [ngModel]="menu_values?.announcement_general" ngModel></textarea>
     </div>
     <div class="form-group">
-      <label for="announcement_guests">Announcement (for all guests):</label><br>
+      <label for="announcement_guests">Announcement (for all guests):</label>
       <textarea id="announcement_guests" name="announcement_guests" rows="4" cols="40" [ngModel]="menu_values?.announcement_guests" ngModel></textarea>
     </div>
     <div class="form-group">
-      <label for="announcement_registered_users">Announcement (for all registered users):</label><br>
+      <label for="announcement_registered_users">Announcement (for all registered users):</label>
       <textarea id="announcement_registered_users" name="announcement_registered_users" rows="4" cols="40" [ngModel]="menu_values?.announcement_registered_users" ngModel></textarea>
     </div>
     <div class="form-group">
-      <label for="announcement_team">Announcement (for admin team):</label><br>
+      <label for="announcement_team">Announcement (for admin team):</label>
       <textarea id="announcement_team" name="announcement_team" rows="4" cols="40" [ngModel]="menu_values?.announcement_team" ngModel></textarea>
     </div>
 
 
     <div class="form-group">
-      <label for="name">Name:</label>
-      <input id="name" name="name" [ngModel]="menu_values.name" ngModel />
+      <label for="timeout_time">Timeout time (sec):</label>
+      <input id="timeout_time" type="number" name="timeout_time" [ngModel]="menu_values.timeout_time" ngModel />
     </div>
     <div class="form-group">
-      <label for="tel">Telephone:</label>
-      <input id="tel" name="tel" [ngModel]="menu_values.tel" ngModel />
+      <label for="pw_recovery_token_valid_time">Passwort recovery link time (sec):</label>
+      <input id="pw_recovery_token_valid_time" type="number" name="pw_recovery_token_valid_time" [ngModel]="menu_values.pw_recovery_token_valid_time" ngModel />
     </div>
     <div class="form-group">
-      <label for="mail">Email:</label>
-      <input id="mail" name="mail" type="email" [ngModel]="menu_values.mail" ngModel />
+      <label for="pw_min_len">Min Password Length:</label>
+      <input id="pw_min_len" name="pw_min_len" type="number" [ngModel]="menu_values.pw_min_len" ngModel />
     </div>
     <div class="form-group">
       <label for="fediverse_id">Fediverse ID:</label>

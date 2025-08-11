@@ -70,9 +70,21 @@
         <input id="col2" name="col2" ngModel />
       </div>
 
-      <div class="form-actions">
-        <button type="submit">Submit</button>
+          <div class="form-actions">
+      <span class="form-note">
+        @if (this.color_gradient_error) {
+        <div>error</div>
+        }
+        @if (!this.color_gradient_error && this.color_gradient_error != null) {
+        <div>gradient color changed</div>
+        }
+      </span>
+      <div class="button-group">
+        <button type="submit" [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
+          Save
+        </button>
       </div>
+    </div>
     </fieldset>
   </form>
 
