@@ -190,7 +190,7 @@ async def pg_db_init():
         """)
         await conn.execute("""
         CREATE TABLE IF NOT EXISTS webauthn_challenges (
-            username TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             challenge BYTEA NOT NULL,
             expires_at TIMESTAMP NOT NULL
         );
