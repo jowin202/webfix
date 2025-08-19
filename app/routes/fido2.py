@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import os, secrets
-from itsdangerous import URLSafeSerializer
 
 from webauthn import (
     verify_registration_response,
