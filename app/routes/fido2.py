@@ -111,7 +111,7 @@ async def register_verify(body: FinishPayload, request: Request, token: str = De
             FROM webauthn_challenges
             WHERE user_id = $1
             AND valid_from >= NOW() - ($2 || ' seconds')::interval
-            """, id, str(300))
+            """, id, str(manager.get_setting("fido2_challenge_valid_time")))
         if not row:
             raise HTTPException(400, "No challenge")
         
