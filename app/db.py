@@ -176,6 +176,26 @@ async def pg_db_init():
             )
         ''')
 
+        # fido2
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS webauthn_credentials (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            credential_id BYTEA NOT NULL UNIQUE,
+            public_key BYTEA NOT NULL,
+            sign_count BIGINT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT now(),
+            last_used_at TIMESTAMP
+            );
+        """)
+        await conn.execute("""
+        CREATE TABLE IF NOT EXISTS webauthn_challenges (
+            username TEXT PRIMARY KEY,
+            challenge BYTEA NOT NULL,
+            expires_at TIMESTAMP NOT NULL
+        );
+        """)
+
 
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)
