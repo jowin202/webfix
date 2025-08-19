@@ -53,6 +53,10 @@
       <input id="pw_recovery_token_valid_time" type="number" name="pw_recovery_token_valid_time" [ngModel]="menu_values.pw_recovery_token_valid_time" ngModel />
     </div>
     <div class="form-group">
+      <label for="fido2_challenge_valid_time">FIDO2 max challenge time (sec):</label>
+      <input id="fido2_challenge_valid_time" type="number" name="fido2_challenge_valid_time" [ngModel]="menu_values.fido2_challenge_valid_time" ngModel />
+    </div>
+    <div class="form-group">
       <label for="pw_min_len">Min Password Length:</label>
       <input id="pw_min_len" name="pw_min_len" type="number" [ngModel]="menu_values.pw_min_len" ngModel />
     </div>
