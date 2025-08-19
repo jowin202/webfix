@@ -261,7 +261,7 @@ app.include_router(login.router, tags=["login"], prefix="/api/login")
 app.include_router(register.router, tags=["register"], prefix="/api/register")
 app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
 app.include_router(data.router, tags=["data"], prefix="/api/data", dependencies=[Depends(verify_token)])
-app.include_router(pwmanage.router, tags=["fido2"], prefix="/api/fido2")
+app.include_router(fido2.router, tags=["fido2"], prefix="/api/fido2")
 app.include_router(activationlinks.router, tags=["activationlinks"], prefix="")
 
 
