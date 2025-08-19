@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import Depends, FastAPI, HTTPException, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import os, secrets
 
+from security import verify_token
 from db import get_pg_connection, release_pg_connection
 
 from webauthn import (
@@ -31,10 +32,8 @@ CHALLENGES: Dict[str, str] = {}
 
 class BeginPayload(BaseModel):
     username: str
-    display_name: Optional[str] = None
 
 class FinishPayload(BaseModel):
-    username: str
     credential: Dict[str, Any]
     
 def _new_challenge() -> bytes:
@@ -42,19 +41,18 @@ def _new_challenge() -> bytes:
 
 # -------- Registration --------
 @router.post("/register/begin")
-async def register_begin(body: BeginPayload):
-    username = body.username.strip().lower()
+async def register_begin(request: Request, token: str = Depends(verify_token)):
     challenge = _new_challenge()
-    if not username:
-        raise HTTPException(400, "username required")
-        
-    
+    id = request.state.user_id
+    username = ""
+
     exclude = []
     try:
         conn = await get_pg_connection()
-        user = await conn.fetchrow("SELECT id FROM users WHERE LOWER(username)=LOWER($1)", username)
+        user = await conn.fetchrow("SELECT username FROM users WHERE id=$1", id)
         if not user:
             raise HTTPException(status_code=400, detail="User not found")
+        username = user['username']
         
         
         # save challenge
@@ -64,13 +62,11 @@ async def register_begin(body: BeginPayload):
             VALUES ($1, $2)
             ON CONFLICT (user_id) DO UPDATE SET challenge=EXCLUDED.challenge, valid_from=EXCLUDED.valid_from
             """,
-            user['id'], bytes_to_base64url(challenge))
+            id, bytes_to_base64url(challenge))
 
         # list credentials
         credential_list = await conn.fetch(
-            "SELECT credential_id, public_key, sign_count FROM webauthn_credentials WHERE user_id=$1",
-            user['id']
-        )
+            "SELECT credential_id, public_key, sign_count FROM webauthn_credentials WHERE user_id=$1",id)
 
         exclude = [
             {
@@ -85,16 +81,14 @@ async def register_begin(body: BeginPayload):
     finally:
         if conn:
             await release_pg_connection(conn)
-
-
-    CHALLENGES[username] = challenge
+            
     return {
         "publicKey": {
             "rp": {"id": RP_ID, "name": RP_NAME},
             "user": {
                 "id": bytes_to_base64url(username.encode()),
                 "name": username,
-                "displayName": body.display_name or username,
+                "displayName": username,
             },
             "challenge": bytes_to_base64url(challenge),
             "pubKeyCredParams": [
@@ -106,32 +100,52 @@ async def register_begin(body: BeginPayload):
     }
 
 @router.post("/register/verify")
-async def register_verify(body: FinishPayload):
-    username = body.username.strip().lower()
-    challenge = CHALLENGES.get(username)
-    if challenge is None:
-        raise HTTPException(400, "No challenge")
-
+async def register_verify(body: FinishPayload, request: Request, token: str = Depends(verify_token)):
+    id = request.state.user_id
+    challenge = None
+    
     try:
+        conn = await get_pg_connection()
+        row = await conn.fetchrow("""
+            SELECT challenge
+            FROM webauthn_challenges
+            WHERE user_id = $1
+            AND valid_from >= NOW() - ($2 || ' seconds')::interval
+            """, id, str(300))
+        if not row:
+            raise HTTPException(400, "No challenge")
+        
+        challenge = bytes(base64url_to_bytes(row['challenge'])) # was converted earlier
+
+        # delete
+        await conn.execute("DELETE FROM webauthn_challenges WHERE user_id=$1", id)
+
+        # verify result (or exception)
         result = verify_registration_response(
-            credential=body.credential,
-            expected_challenge=challenge,
+            credential=body.credential,              # raw dict from browser
+            expected_challenge=challenge,            # raw bytes
             expected_rp_id=RP_ID,
             expected_origin=ORIGIN,
             require_user_verification=True,
         )
+
+        await conn.execute(
+            """
+            INSERT INTO webauthn_credentials (user_id, credential_id, public_key, sign_count)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (credential_id) DO NOTHING
+            """,
+            id, result.credential_id, result.credential_public_key, int(result.sign_count)
+        )
+    
     except Exception as e:
-        raise HTTPException(400, f"verify failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        if conn:
+            await release_pg_connection(conn)
 
-    cred = {
-        "id": result.credential_id,
-        "public_key": result.credential_public_key,
-        "sign_count": result.sign_count,
-    }
-    USERS.setdefault(username, {"username": username, "credentials": []})["credentials"].append(cred)
-    CHALLENGES.pop(username, None)
     return {"ok": True}
-
+        
 
 
 # -------- Authentication --------

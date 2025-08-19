@@ -1,3 +1,4 @@
+import { HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 @Injectable({
@@ -26,13 +27,15 @@ export class WebAuthnService {
   }
 
   // --- Registration ---
-  async register(username: string, displayName?: string) {
+  async register(auth_token: string) {
     // 1) ask server for options
     const res = await fetch(`${this.api}/register/begin`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, display_name: displayName })
+      headers: { 'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + auth_token },
+      body: JSON.stringify({})
     });
+
     if (!res.ok) throw new Error(await res.text());
     const { publicKey } = await res.json();
 
@@ -47,8 +50,17 @@ export class WebAuthnService {
     }
 
     // 2) create credential
-    const cred = await navigator.credentials.create({ publicKey }) as PublicKeyCredential;
-    if (!cred) throw new Error('Creation cancelled');
+    let cred: PublicKeyCredential;
+    try {
+      cred = await navigator.credentials.create({ publicKey }) as PublicKeyCredential;
+      if (!cred) throw new Error('Creation cancelled');
+    }
+    catch (err: any) {
+    if (err instanceof DOMException && err.name === "InvalidStateError") {
+      return { error: 1 };
+    }
+    throw err; // rethrow anything else
+  }
 
     const response = cred.response as AuthenticatorAttestationResponse;
     const payload = {
@@ -65,8 +77,11 @@ export class WebAuthnService {
     // 3) send back to server
     const verify = await fetch(`${this.api}/register/verify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, credential: payload })
+      headers: { 'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + auth_token
+    
+    },
+      body: JSON.stringify({  credential: payload })
     });
     if (!verify.ok) throw new Error(await verify.text());
     return verify.json();

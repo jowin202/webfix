@@ -55,22 +55,23 @@
       </div>
     </div>
   </fieldset>
+</form>
 
-  <form #gradientForm="ngForm" (ngSubmit)="this.do_color_gradient(gradientForm.value)">
-    <fieldset>
-      <legend>Color Gradient</legend>
+<form #gradientForm="ngForm" (ngSubmit)="this.do_color_gradient(gradientForm.value)">
+  <fieldset>
+    <legend>Color Gradient</legend>
 
-      <div class="form-group">
-        <label for="col1">First Color:</label>
-        <input id="col1" name="col1" ngModel />
-      </div>
+    <div class="form-group">
+      <label for="col1">First Color:</label>
+      <input id="col1" name="col1" ngModel />
+    </div>
 
-      <div class="form-group">
-        <label for="col2">Second Color:</label>
-        <input id="col2" name="col2" ngModel />
-      </div>
+    <div class="form-group">
+      <label for="col2">Second Color:</label>
+      <input id="col2" name="col2" ngModel />
+    </div>
 
-          <div class="form-actions">
+    <div class="form-actions">
       <span class="form-note">
         @if (this.color_gradient_error) {
         <div>error</div>
@@ -85,20 +86,51 @@
         </button>
       </div>
     </div>
-    </fieldset>
-  </form>
-
-  <!-- Read-only Fields -->
-  <fieldset disabled>
-    <legend>Account Metadata</legend>
-    <strong>ID:</strong> {{ userinfo.id ?? -1 }}<br>
-    <strong>Username:</strong> {{ userinfo.username ?? '' }}<br>
-    <strong>Username (HTML): </strong> <span [innerHTML]="userinfo.username_html"></span><br>
-    <strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}<br>
-    <strong>Created:</strong> {{ formatTime(userinfo.created) }}<br>
-    <strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}<br>
-    <strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}<br>
-    <strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}<br>
-    <strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
   </fieldset>
 </form>
+
+
+
+<fieldset>
+  <legend>FIDO2 Login</legend>
+
+  <div class="form-actions">
+    <span class="form-note">
+      @if (this.double_register_error) {
+      <div>error: credential already exists</div>
+      }
+      @if (this.fido_successfull) {
+      <div>Credential created succcessfully</div>
+      }
+
+    </span>
+    <div class="button-group">
+      <button type="submit" [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
+        Save
+      </button>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <div class="button-group">
+      <button type="submit" (click)="do_fido_register()">
+        Register FIDO2 Token
+      </button>
+    </div>
+  </div>
+</fieldset>
+
+
+<!-- Read-only Fields -->
+<fieldset disabled>
+  <legend>Account Metadata</legend>
+  <strong>ID:</strong> {{ userinfo.id ?? -1 }}<br>
+  <strong>Username:</strong> {{ userinfo.username ?? '' }}<br>
+  <strong>Username (HTML): </strong> <span [innerHTML]="userinfo.username_html"></span><br>
+  <strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}<br>
+  <strong>Created:</strong> {{ formatTime(userinfo.created) }}<br>
+  <strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}<br>
+  <strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}<br>
+  <strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}<br>
+  <strong>Registered:</strong> {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
+</fieldset>

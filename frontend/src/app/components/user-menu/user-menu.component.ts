@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
+import { WebAuthnService } from '../../services/webauthn.service';
 
 @Component({
   selector: 'app-user-menu',
@@ -11,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class UserMenuComponent implements OnInit {
 
-  constructor(public auth: AuthService, public api: ApiService) { }
+  constructor(public auth: AuthService, public api: ApiService, public webauthn: WebAuthnService) { }
   @Output() closeEvent = new EventEmitter<string>();
 
   change_pw: Boolean = false;
@@ -19,13 +20,15 @@ export class UserMenuComponent implements OnInit {
 
   color_gradient_error : Boolean | null = null;
 
+  fido_successfull : Boolean = false;
+  double_register_error : Boolean = false;
+
 
   ngOnInit(): void {
     //TODO: error handling in API
     this.api.get("/api/data/get_user_info/", this.auth.token)
       .subscribe(result => {
         this.userinfo = result
-        console.log(this.userinfo)
       });
   }
   userinfo: any = [];
@@ -105,6 +108,22 @@ export class UserMenuComponent implements OnInit {
     });
   }
 
+  async do_fido_register()
+  {
+    this.double_register_error = false;
+    this.fido_successfull = false;
 
+    var result = await this.webauthn.register(this.auth.token);
+    console.log(result)
+
+    if ("error" in result && result['error'] == 1)
+    {
+      this.double_register_error = true;
+    }
+    else if ("ok" in result && result['ok'] == true)
+    {
+      this.fido_successfull = true;
+    }
+  }
 
 }
