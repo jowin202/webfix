@@ -184,15 +184,15 @@ async def pg_db_init():
             credential_id BYTEA NOT NULL UNIQUE,
             public_key BYTEA NOT NULL,
             sign_count BIGINT NOT NULL DEFAULT 0,
-            created_at TIMESTAMP NOT NULL DEFAULT now(),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             last_used_at TIMESTAMP
             );
         """)
         await conn.execute("""
         CREATE TABLE IF NOT EXISTS webauthn_challenges (
-            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            challenge BYTEA NOT NULL,
-            expires_at TIMESTAMP NOT NULL
+            user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+            challenge VARCHAR NOT NULL,
+            valid_from TIMESTAMP NOT NULL DEFAULT NOW()
         );
         """)
 
@@ -215,6 +215,8 @@ async def pg_db_remove():
         await conn.execute('''DROP TABLE settings_int CASCADE''')
         await conn.execute('''DROP TABLE banned_ips CASCADE''')
         await conn.execute('''DROP TABLE private_messages CASCADE''')
+        await conn.execute('''DROP TABLE webauthn_credentials CASCADE''')
+        await conn.execute('''DROP TABLE webauthn_challenges CASCADE''')
 
     except Exception as e:
         print(f"An error occurred: {e}",flush=True)

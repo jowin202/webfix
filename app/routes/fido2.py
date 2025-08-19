@@ -42,27 +42,29 @@ def _new_challenge() -> bytes:
 
 # -------- Registration --------
 @router.post("/register/begin")
-def register_begin(body: BeginPayload):
+async def register_begin(body: BeginPayload):
     username = body.username.strip().lower()
     challenge = _new_challenge()
     if not username:
         raise HTTPException(400, "username required")
         
+    
+    exclude = []
     try:
         conn = await get_pg_connection()
         user = await conn.fetchrow("SELECT id FROM users WHERE LOWER(username)=LOWER($1)", username)
         if not user:
-            raise HTTPException(404, "user not found")
+            raise HTTPException(status_code=400, detail="User not found")
+        
         
         # save challenge
         await conn.execute(
             """
-            INSERT INTO webauthn_challenges (user_id, challenge, expires_at)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (username) DO UPDATE SET challenge=EXCLUDED.challenge, expires_at=EXCLUDED.expires_at
+            INSERT INTO webauthn_challenges (user_id, challenge)
+            VALUES ($1, $2)
+            ON CONFLICT (user_id) DO UPDATE SET challenge=EXCLUDED.challenge, valid_from=EXCLUDED.valid_from
             """,
-            user['id'], challenge, datetime.now(timezone.utc) + timedelta(seconds=300) # TODO
-        )
+            user['id'], bytes_to_base64url(challenge))
 
         # list credentials
         credential_list = await conn.fetch(
@@ -78,8 +80,8 @@ def register_begin(body: BeginPayload):
             for c in credential_list
         ]
 
-    except:
-        pass
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     finally:
         if conn:
             await release_pg_connection(conn)
@@ -104,7 +106,7 @@ def register_begin(body: BeginPayload):
     }
 
 @router.post("/register/verify")
-def register_verify(body: FinishPayload):
+async def register_verify(body: FinishPayload):
     username = body.username.strip().lower()
     challenge = CHALLENGES.get(username)
     if challenge is None:
@@ -134,7 +136,7 @@ def register_verify(body: FinishPayload):
 
 # -------- Authentication --------
 @router.post("/login/begin")
-def login_begin(body: BeginPayload):
+async def login_begin(body: BeginPayload):
     username = body.username.strip().lower()
     user = USERS.get(username)
     if not user:
@@ -157,7 +159,7 @@ def login_begin(body: BeginPayload):
     }
 
 @router.post("/login/verify")
-def login_verify(body: FinishPayload):
+async def login_verify(body: FinishPayload):
     username = body.username.strip().lower()
 
     challenge = CHALLENGES.get(username)   # raw bytes
