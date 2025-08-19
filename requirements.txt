@@ -7,3 +7,4 @@ websockets
 Mastodon.py
 bs4
 bleach
+webauthn
