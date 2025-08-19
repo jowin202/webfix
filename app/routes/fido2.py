@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
@@ -10,6 +10,11 @@ from webauthn import (
 )
 from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
 
+
+
+router = APIRouter()
+
+
 # ============ CONFIG ============
 RP_ID = os.getenv("FIDO2_RP_ID", "localhost")
 RP_NAME = os.getenv("FIDO2_RP_NAME", "Webfix")
@@ -18,14 +23,6 @@ ORIGIN = os.getenv("FIDO2_ORIGIN", "http://localhost")
 USERS: Dict[str, Dict[str, Any]] = {}
 CHALLENGES: Dict[str, str] = {}
 
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[ORIGIN],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 class BeginPayload(BaseModel):
     username: str
@@ -39,7 +36,7 @@ def _new_challenge() -> bytes:
     return secrets.token_bytes(32)
 
 # -------- Registration --------
-@app.post("/register/begin")
+@router.post("/register/begin")
 def register_begin(body: BeginPayload):
     username = body.username.strip().lower()
     challenge = _new_challenge()
@@ -60,7 +57,7 @@ def register_begin(body: BeginPayload):
         }
     }
 
-@app.post("/register/verify")
+@router.post("/register/verify")
 def register_verify(body: FinishPayload):
     username = body.username.strip().lower()
     challenge = CHALLENGES.get(username)
@@ -90,7 +87,7 @@ def register_verify(body: FinishPayload):
 
 
 # -------- Authentication --------
-@app.post("/login/begin")
+@router.post("/login/begin")
 def login_begin(body: BeginPayload):
     username = body.username.strip().lower()
     user = USERS.get(username)
@@ -113,7 +110,7 @@ def login_begin(body: BeginPayload):
         }
     }
 
-@app.post("/login/verify")
+@router.post("/login/verify")
 def login_verify(body: FinishPayload):
     username = body.username.strip().lower()
 
