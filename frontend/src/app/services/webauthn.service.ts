@@ -27,16 +27,19 @@ export class WebAuthnService {
   }
 
   // --- Registration ---
-  async register(auth_token: string) {
+  async register(auth_token: string, password : string) {
     // 1) ask server for options
     const res = await fetch(`${this.api}/register/begin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + auth_token },
-      body: JSON.stringify({})
+      body: JSON.stringify({password: password})
     });
-
-    if (!res.ok) throw new Error(await res.text());
+    if (res.status == 404) //no user, wrong password
+    {
+      return {error: res.status}
+    }
+    
     const { publicKey } = await res.json();
 
     // convert to ArrayBuffers
@@ -83,7 +86,10 @@ export class WebAuthnService {
     },
       body: JSON.stringify({  credential: payload })
     });
-    if (!verify.ok) throw new Error(await verify.text());
+    if (verify.status == 400) // no challenge
+    {
+      return {error : verify.status}
+    }
     return verify.json();
   }
 

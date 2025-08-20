@@ -22,6 +22,8 @@ export class UserMenuComponent implements OnInit {
 
   fido_successfull : Boolean = false;
   double_register_error : Boolean = false;
+  no_challenge_error : Boolean = false;
+  wrong_password_error : Boolean = false;
 
 
   ngOnInit(): void {
@@ -108,17 +110,26 @@ export class UserMenuComponent implements OnInit {
     });
   }
 
-  async do_fido_register()
+  async do_fido_register(password : string)
   {
+    this.no_challenge_error = false;
     this.double_register_error = false;
+    this.wrong_password_error = false;
     this.fido_successfull = false;
 
-    var result = await this.webauthn.register(this.auth.token);
-    console.log(result)
+    var result = await this.webauthn.register(this.auth.token, password);
 
     if ("error" in result && result['error'] == 1)
     {
       this.double_register_error = true;
+    }
+    else if ("error" in result && result['error'] == 400)
+    {
+      this.no_challenge_error = true;
+    }
+    else if ("error" in result && result['error'] == 404)
+    {
+      this.wrong_password_error = true;
     }
     else if ("ok" in result && result['ok'] == true)
     {

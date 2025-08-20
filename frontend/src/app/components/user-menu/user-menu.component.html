@@ -94,10 +94,22 @@
 <fieldset>
   <legend>FIDO2 Login</legend>
 
+
+    <div class="form-group">
+      <label for="password">Current Password:</label>
+      <input id="password" type="password" name="password" #fidopassw />
+    </div>
+
   <div class="form-actions">
     <span class="form-note">
+      @if (this.no_challenge_error) {
+      <div>error: timeout for registering a token</div>
+      }
       @if (this.double_register_error) {
       <div>error: credential already exists</div>
+      }
+      @if (this.wrong_password_error) {
+      <div>error: wrong password</div>
       }
       @if (this.fido_successfull) {
       <div>Credential created succcessfully</div>
@@ -108,7 +120,7 @@
 
   <div class="form-actions">
     <div class="button-group">
-      <button type="submit" (click)="do_fido_register()">
+      <button type="submit" (click)="do_fido_register(fidopassw.value); fidopassw.value = ''">
         Register FIDO2 Token
       </button>
     </div>

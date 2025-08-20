@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 import os, secrets
 
 from security import verify_token
+from helper import calc_hmac
 from db import get_pg_connection, release_pg_connection
 
 from webauthn import (
@@ -29,6 +30,8 @@ ORIGIN = os.getenv("FIDO2_ORIGIN", "http://localhost")
 USERS: Dict[str, Dict[str, Any]] = {}
 CHALLENGES: Dict[str, str] = {}
 
+class RegisterBeginPayload(BaseModel):
+    password: str
 
 class BeginPayload(BaseModel):
     username: str
@@ -41,17 +44,18 @@ def _new_challenge() -> bytes:
 
 # -------- Registration --------
 @router.post("/register/begin")
-async def register_begin(request: Request, token: str = Depends(verify_token)):
+async def register_begin(data: RegisterBeginPayload, request: Request, token: str = Depends(verify_token)):
     challenge = _new_challenge()
     id = request.state.user_id
     username = ""
+    password = calc_hmac(data.password)
 
     exclude = []
     try:
         conn = await get_pg_connection()
-        user = await conn.fetchrow("SELECT username FROM users WHERE id=$1", id)
+        user = await conn.fetchrow("SELECT username FROM users WHERE id=$1 AND password=$2", id, password)
         if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+            raise HTTPException(status_code=404, detail="User not found")
         username = user['username']
         
         
@@ -77,7 +81,7 @@ async def register_begin(request: Request, token: str = Depends(verify_token)):
         ]
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=e.status_code, detail=str(e))
     finally:
         if conn:
             await release_pg_connection(conn)
@@ -139,7 +143,7 @@ async def register_verify(body: FinishPayload, request: Request, token: str = De
         )
     
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=e.status_code, detail=str(e))
     finally:
         if conn:
             await release_pg_connection(conn)
