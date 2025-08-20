@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { WebAuthnService } from '../../services/webauthn.service';
 
 @Component({
   selector: 'app-login-window',
@@ -12,13 +13,21 @@ import { ApiService } from '../../services/api.service';
 })
 export class LoginWindowComponent {
 
-  constructor (public auth : AuthService, public api : ApiService){}
+  constructor(public auth: AuthService, public api: ApiService, public webauthn: WebAuthnService) { }
 
-  do_page_login(value : any){
-    this.auth.do_login(value.username, value.password, value.remember);
+  async do_page_login(value: any) {
+    if (value.password == "") { //fido login
+      var result = await this.webauthn.login(value.username);
+      if ("access_token" in result){
+        this.auth.do_login_from_token(result['access_token']);
+      }
+    }
+    else { // normal login
+      this.auth.do_login(value.username, value.password, value.remember);
+    }
   }
 
-  do_guest_login(value : any){
+  do_guest_login(value: any) {
     this.auth.do_guest_login(value.guestName, false);
   }
 }
