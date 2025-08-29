@@ -18,12 +18,20 @@ export class UserMenuComponent implements OnInit {
   change_pw: Boolean = false;
   error_at_html_user: Boolean = false;
 
-  color_gradient_error : Boolean | null = null;
+  color_gradient_error: Boolean | null = null;
 
-  fido_successfull : Boolean = false;
-  double_register_error : Boolean = false;
-  no_challenge_error : Boolean = false;
-  wrong_password_error : Boolean = false;
+  // fido2
+  fido_successfull: Boolean = false;
+  double_register_error: Boolean = false;
+  no_challenge_error: Boolean = false;
+  wrong_password_error: Boolean = false;
+  fido_credentials: {
+    id: number;
+    name: string;
+    created_at: string;
+    last_used_at: Date;
+    sign_count: number;
+  }[] = [];
 
 
   ngOnInit(): void {
@@ -32,6 +40,8 @@ export class UserMenuComponent implements OnInit {
       .subscribe(result => {
         this.userinfo = result
       });
+
+    this.fido_credentials_reload();
   }
   userinfo: any = [];
 
@@ -73,7 +83,7 @@ export class UserMenuComponent implements OnInit {
   }
 
 
-  formatTime(timestamp: number) {
+  formatTime(timestamp: any) {
     const date = new Date(timestamp);
     return date.toLocaleString(); // Local date/time string
   }
@@ -102,39 +112,47 @@ export class UserMenuComponent implements OnInit {
   }
 
 
-  do_color_gradient(value : any)
-  {
+  do_color_gradient(value: any) {
     this.api.post("/api/data/change_name_color/" + value.col1 + "/" + value.col2 + "/", this.auth.token, {}).subscribe(result => {
       this.color_gradient_error = !result['success'];
       console.log(this.color_gradient_error);
     });
   }
 
-  async do_fido_register(password : string)
-  {
+  async do_fido_register(password: string, name: string) {
     this.no_challenge_error = false;
     this.double_register_error = false;
     this.wrong_password_error = false;
     this.fido_successfull = false;
 
-    var result = await this.webauthn.register(this.auth.token, password);
+    var result = await this.webauthn.register(this.auth.token, password, name);
 
-    if ("error" in result && result['error'] == 1)
-    {
+    if ("error" in result && result['error'] == 1) {
       this.double_register_error = true;
     }
-    else if ("error" in result && result['error'] == 400)
-    {
+    else if ("error" in result && result['error'] == 400) {
       this.no_challenge_error = true;
     }
-    else if ("error" in result && result['error'] == 404)
-    {
+    else if ("error" in result && result['error'] == 404) {
       this.wrong_password_error = true;
     }
-    else if ("ok" in result && result['ok'] == true)
-    {
+    else if ("ok" in result && result['ok'] == true) {
       this.fido_successfull = true;
     }
+    this.fido_credentials_reload();
   }
 
+  fido_credentials_reload() {
+    this.api.get("/api/fido2/credentials/", this.auth.token)
+      .subscribe(result => {
+        this.fido_credentials = result
+      });
+  }
+
+  fido_credentials_delete(id : number) {
+    this.api.delete("/api/fido2/credentials/" + id + "/", this.auth.token)
+      .subscribe(result => {
+        this.fido_credentials_reload();
+      });
+  }
 }

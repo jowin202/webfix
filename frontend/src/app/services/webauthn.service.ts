@@ -27,7 +27,7 @@ export class WebAuthnService {
   }
 
   // --- Registration ---
-  async register(auth_token: string, password : string) {
+  async register(auth_token: string, password : string, name : string) {
     // 1) ask server for options
     const res = await fetch(`${this.api}/register/begin`, {
       method: 'POST',
@@ -82,9 +82,8 @@ export class WebAuthnService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + auth_token
-    
     },
-      body: JSON.stringify({  credential: payload })
+      body: JSON.stringify({  credential: payload, name: name })
     });
     if (verify.status == 400) // no challenge
     {

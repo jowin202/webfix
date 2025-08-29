@@ -37,6 +37,7 @@ class BeginPayload(BaseModel):
 
 class FinishPayload(BaseModel):
     credential: Dict[str, Any]
+    name: str
 
 class FinishLoginPayload(BaseModel):
     credential: Dict[str, Any]
@@ -138,11 +139,11 @@ async def register_verify(body: FinishPayload, request: Request, token: str = De
 
         await conn.execute(
             """
-            INSERT INTO webauthn_credentials (user_id, credential_id, public_key, sign_count)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO webauthn_credentials (user_id, name, credential_id, public_key, sign_count)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (credential_id) DO NOTHING
             """,
-            id, result.credential_id, result.credential_public_key, int(result.sign_count)
+            id, body.name, result.credential_id, result.credential_public_key, int(result.sign_count)
         )
     
     except Exception as e:
@@ -321,3 +322,34 @@ async def login_verify(body: FinishLoginPayload):
     
     return {"access_token": token}
 
+
+
+
+
+
+
+@router.get("/credentials/")
+async def get_credentials(request : Request, token: str = Depends(verify_token)):
+    
+    conn = await get_pg_connection() 
+    query = '''
+        SELECT id,name,created_at,last_used_at,sign_count FROM webauthn_credentials 
+        WHERE user_id = $1
+    '''
+    result = await conn.fetch(query, request.state.user_id)
+    await release_pg_connection(conn)
+
+    return result
+
+@router.delete("/credentials/{id}/")
+async def delete_credential(request : Request, id : int, token: str = Depends(verify_token)):
+    
+    conn = await get_pg_connection() 
+    query = '''
+        DELETE FROM webauthn_credentials
+        WHERE user_id = $1 AND id = $2
+    '''
+    result = await conn.fetch(query, request.state.user_id, id)
+    await release_pg_connection(conn)
+
+    return True

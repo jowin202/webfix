@@ -181,11 +181,12 @@ async def pg_db_init():
             CREATE TABLE IF NOT EXISTS webauthn_credentials (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name VARCHAR,
             credential_id BYTEA NOT NULL UNIQUE,
             public_key BYTEA NOT NULL,
             sign_count BIGINT NOT NULL DEFAULT 0,
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-            last_used_at TIMESTAMP
+            last_used_at TIMESTAMP NOT NULL DEFAULT NOW()
             );
         """)
         await conn.execute("""
