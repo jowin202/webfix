@@ -1,0 +1,25 @@
+        @for (message of stream.messages; track message) {
+          <div class="message">
+            @if (message.cat == 'default') {
+              <div>
+                <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+              </div>
+            }
+            @if (message.cat == 'whisper') {
+              <div>
+                <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span
+              [innerHTML]="message.message"></span>
+            </div>
+          }
+          @if (message.cat == 'statusmsg') {
+            <div>
+              <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+            </div>
+          }
+          @if (message.cat == 'announcement') {
+            <div>
+              <span [innerHTML]="message.message"></span>
+            </div>
+          }
+        </div>
+      }

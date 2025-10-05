@@ -32,7 +32,7 @@ services:
       - ./app/:/app/
 
   db:
-    image: postgres:15
+    image: postgres:16
     container_name: chat-postgres
     restart: always
     environment:

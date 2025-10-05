@@ -4,6 +4,8 @@ import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { UserMenuComponent } from "../user-menu/user-menu.component";
 import { AdminMenuComponent } from '../admin-menu/admin-menu.component';
+import { StreamService } from '../../services/stream.service';
+import { StreamComponent } from "../stream/stream.component";
 
 
 interface ChatMessage {
@@ -25,12 +27,12 @@ interface Channels {
 
 @Component({
   selector: 'app-chat-window',
-  imports: [FormsModule, UserMenuComponent, AdminMenuComponent],
+  imports: [FormsModule, UserMenuComponent, AdminMenuComponent, StreamComponent],
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.scss'
 })
 export class ChatWindowComponent implements OnInit, OnDestroy {
-  constructor(public api: ApiService, public auth: AuthService) { }
+  constructor(public api: ApiService, public auth: AuthService, public stream: StreamService) { }
 
 
   channels: Channels[] = [];
@@ -41,54 +43,12 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   showAdminMenu: Boolean = false;
 
   ngOnInit() {
-    this.connect_websocket();
+    this.stream.connect_websocket();
     this.update_online_list();
     this.update_channel_list();
   }
 
 
-  connect_websocket() {
-    this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
-      if ("username" in result && "message" in result) {
-        result['cat'] = "default"
-        this.messages.push(result);
-      }
-      else if ("cat" in result && result['cat'] == "statusmsg" && "msg" in result) {
-        this.messages.push({ cat: "statusmsg", username: "ChatBot", "message": "<i>" + result['msg'] + "</i>" })
-      }
-      //whisper
-      else if ("cat" in result && result['cat'] == "whisper" && "username" in result && "msg" in result) {
-        this.messages.push({ cat: "whisper", username: result['username'], "message": result['msg'] });
-      }
-      // login and logout message from db
-      else if ("cat" in result && result['cat'] == "userlogin" && "username" in result && "msg" in result) {
-        this.messages.push({ cat: "statusmsg", username: "ChatBot", "message": result['username'] + " " + result['msg'] })
-        this.update_online_list();
-      }
-      else if ("cat" in result && result['cat'] == "userlogout" && "username" in result && "msg" in result) {
-        this.messages.push({ cat: "statusmsg", username: "ChatBot", "message": result['username'] + " " + result['msg'] })
-        this.update_online_list();
-      }
-      // channel switch (TODO)
-      else if ("cat" in result && result['cat'] == "userleft" && "username" in result) {
-        this.messages.push({ cat: "statusmsg", username: "ChatBot", "message": "<i>" + result['username'] + " left the channel</i>" })
-        this.update_online_list();
-      }
-      else if ("cat" in result && result['cat'] == "userenters" && "username" in result) {
-        this.messages.push({ cat: "statusmsg", username: "ChatBot", "message": "<i>" + result['username'] + " enters the channel</i>" })
-        this.update_online_list();
-      }
-      // announcement
-      else if ("cat" in result && result['cat'] == "announcement" && "msg" in result) {
-        this.messages.push({ cat: "announcement", username: "", "message": "<i>" + result['msg'] + "</i>" })
-      }
-      else if ("error_code" in result) {
-        this.messages.push({ cat: "statusmsg", username: "ChatBot", message: result['error_string'] })
-        //this.connect_websocket()
-      }
-    }
-    );
-  }
 
   update_online_list() {
     this.api.get("/api/data/online/", this.auth.token)
