@@ -51,6 +51,14 @@ export class StreamService {
   connect_websocket() {
     this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
       
+      
+      if ("error_code" in result && result['error_code'] == -3) {
+        this.messages.push({
+          cat: "announcement",
+          message: "<font color='red'>Stream closed, reconnect...</font>",
+        });
+      }
+      
       if ("username" in result && "message" in result && !("toUser" in result)) {
         this.messages.push({
           cat: "default",

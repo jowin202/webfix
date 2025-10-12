@@ -144,7 +144,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
         if valid:
-            await conn.execute(f"NOTIFY whisper_{id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login'})}'")
+            await conn.execute(f"NOTIFY whisper_{id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login detected'})}'")
             await conn.execute(f"NOTIFY whisper_{id}, 'exit'")
     except Exception as e:
         print("exception: " + str(e), flush=True)
@@ -154,7 +154,7 @@ async def websocket_endpoint(websocket: WebSocket):
         await release_pg_connection(conn)
 
     await websocket.accept()
-    await websocket.send_text(f'{{"cat": "statusmsg", "msg": "stream opened for {username}, id: {id}"}}')
+    #await websocket.send_text(f'{{"cat": "statusmsg", "msg": "stream opened for {username}, id: {id}"}}')
 
     if not valid:
         await websocket.send_text(f'{{"cat": "statusmsg", "msg": "{message}"}}')
