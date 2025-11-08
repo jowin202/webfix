@@ -6,6 +6,7 @@ import { EventEmitter } from 'stream';
 
 export type PublicMessageCategory =
   | "default"
+  | "private"
   | "statusmsg"
   | "whisper"
   | "userlogin"
@@ -22,16 +23,29 @@ export interface PublicMessage {
   timestamp?: Date;
 }
 
-
 export interface PrivateMessage {
   from: string; 
-  to: string; 
   message: string;
   timestamp?: Date;
 }
 
 export interface PrivateMessagesByUser {
   [username: string]: PrivateMessage[];
+}
+
+const privateMessages: PrivateMessagesByUser = {};
+
+function addMessage(
+  message: PrivateMessage
+) {
+  if (!privateMessages[message.from]) {
+    privateMessages[message.from] = []; // Falls keine Liste existiert, anlegen
+  }
+  privateMessages[message.from].push(message); // Nachricht hinzufügen
+}
+
+function getMessages(username: string): PrivateMessage[] {
+  return privateMessages[username] || [];
 }
 
 
@@ -67,23 +81,23 @@ export class StreamService {
         });
       }
       
-      else if ("cat" in result && result.cat === "privatemsg" && "username" in result && "msg" in result && "toUser" in result) {
+      else if ("cat" in result && result.cat === "whisper" && "username" in result && "msg" in result) {
         const from = result.username;
-        const to = result.toUser;
         const msg: PrivateMessage = {
           from,
-          to,
           message: result.msg,
           timestamp: new Date(),
         };
 
-        // Zielbenutzer ermitteln (damit beide Seiten den Chat sehen)
-        const chatKey = from === this.auth.username ? to : from;
 
-        if (!this.privateMessages[chatKey]) {
-          this.privateMessages[chatKey] = [];
-        }
-        this.privateMessages[chatKey].push(msg);
+        this.messages.push({
+          cat: "private",
+          username: result.username,
+          message: result.msg,
+        });
+
+
+        addMessage(msg);
       }
 
       // statusmsg
