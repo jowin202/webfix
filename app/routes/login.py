@@ -21,6 +21,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     username = form_data.username
     password = calc_hmac(form_data.password)
     valid = False
+    kicked = False
     token = token_generate()
     login_msg = ""
     channel_id = 1
@@ -28,7 +29,15 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT id, password, is_activated, admin, channel_id, login_msg
+            SELECT id, password, is_activated, admin, channel_id, login_msg,
+            CASE 
+                WHEN kicked_until = 'infinity'::timestamp 
+                    THEN 9223372036854775807
+                WHEN kicked_until = '-infinity'::timestamp 
+                    OR kicked_until - NOW() < INTERVAL '0 seconds'
+                        THEN 0
+            ELSE EXTRACT(EPOCH FROM (kicked_until - NOW()))
+            END AS kicked_seconds
             FROM users 
             WHERE LOWER(username) = LOWER($1)
         '''
@@ -36,6 +45,10 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         user_id = result['id']
         login_msg = result['login_msg']
         channel_id = result['channel_id']
+        kicked_seconds = result['kicked_seconds']
+        kicked = True if (kicked_seconds > 0) else False
+        if kicked:
+            raise Exception()
 
         if not manager.get_setting("mandatory_user_verification") or result['is_activated']:
             if result and result['password'] == password:
@@ -69,6 +82,9 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     finally:
         if conn:
             await release_pg_connection(conn)
+
+    if kicked:
+        raise HTTPException(status_code=400, detail="User is blocked.")
 
     if not valid:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
@@ -139,7 +155,15 @@ async def login_token(token : str):
     
     conn = await get_pg_connection() 
     query = '''
-        SELECT id, username, admin, channel_id
+        SELECT id, username, admin, channel_id,
+            CASE 
+                WHEN kicked_until = 'infinity'::timestamp 
+                    THEN 9223372036854775807
+                WHEN kicked_until = '-infinity'::timestamp 
+                    OR kicked_until - NOW() < INTERVAL '0 seconds'
+                        THEN 0
+            ELSE EXTRACT(EPOCH FROM (kicked_until - NOW()))
+            END AS kicked_seconds
         FROM users
         WHERE token = $1
     '''
@@ -150,6 +174,10 @@ async def login_token(token : str):
 
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if row['kicked_seconds'] > 0:
+        raise HTTPException(status_code=400, detail="User is blocked.")
+        
     
     username = row['username'] if row and "username" in row else ""
     admin = row['admin'] if row and "admin" in row else ""

@@ -18,7 +18,15 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     ip_blocked = await conn.fetchval(ip_check_query, client_ip)
 
     query = '''
-        SELECT id 
+        SELECT id,
+            CASE 
+                WHEN kicked_until = 'infinity'::timestamp 
+                    THEN 9223372036854775807
+                WHEN kicked_until = '-infinity'::timestamp 
+                    OR kicked_until - NOW() < INTERVAL '0 seconds'
+                        THEN 0
+            ELSE EXTRACT(EPOCH FROM (kicked_until - NOW()))
+            END AS kicked_seconds
         FROM users 
         WHERE token = $1 
     '''
@@ -27,6 +35,9 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
 
     if ip_blocked:
         raise HTTPException(status_code=403, detail="Your IP is blocked.")
+
+    if result['kicked_seconds'] > 0:
+        raise HTTPException(status_code=403, detail="User is blocked.")
     
     valid = False
     if result: # todo result as admin
