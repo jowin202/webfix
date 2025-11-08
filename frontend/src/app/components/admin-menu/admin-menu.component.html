@@ -1,5 +1,5 @@
 <form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
-  <!-- Editable Fields -->
+  
   <fieldset>
     <legend>Chat Settings</legend>
     <div class="form-group">
@@ -60,30 +60,10 @@
       <label for="pw_min_len">Min Password Length:</label>
       <input id="pw_min_len" name="pw_min_len" type="number" [ngModel]="menu_values.pw_min_len" ngModel />
     </div>
-    <div class="form-group">
-      <label for="fediverse_id">Fediverse ID:</label>
-      <input id="fediverse_id" name="fediverse_id" [ngModel]="menu_values.fediverse_id" ngModel />
-    </div>
-    <div class="form-group">
-      <label for="login_msg">Login Message:</label>
-      <input id="login_msg" name="login_msg" [ngModel]="menu_values.login_msg" ngModel />
-    </div>
-    <div class="form-group">
-      <label for="logout_msg">Logout Message:</label>
-      <input id="logout_msg" name="logout_msg" [ngModel]="menu_values.logout_msg" ngModel />
-    </div>
-    <div class="form-group">
-      <label for="password">Change Password:</label>
-      <input id="password" type="password" name="password" ngModel />
-    </div>
-    <div class="form-group">
-      <label for="password2">Confirm Password:</label>
-      <input id="password2" type="password" name="password2" ngModel />
-    </div>
     <div class="form-actions">
       <span class="form-note">
         @if (this.error) {
-        <div>Error: Username must match with HTML</div>
+        <div>Error: An error occured</div>
         }
       </span>
       <div class="button-group">
