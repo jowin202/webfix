@@ -56,21 +56,7 @@ async def get_user_by_id(id : int):
     """
     result = await conn.fetchrow(query, id)
     return result
-
-@router.get("/get_user_by_name/")
-async def get_user_by_name(username : str):
-    conn = await get_pg_connection()
-    query = """
-        SELECT id, username, username_html,name,tel,mail,fediverse_id, login_msg, logout_msg,
-        is_activated, online_time, failed_attempts, created,last_posted, last_login,
-        login_count, remove_on_logout, visible, kicked_until, muted_until, admin, channel_id
-        FROM users 
-        WHERE LOWER(username) = LOWER($1)
-    """
-    result = await conn.fetchrow(query, username)
-    return result
-
-
+    
 @router.put("/set_user/{id}/")
 async def update_user_by_id(id : int, data: SetUserRequest):
     conn = await get_pg_connection()

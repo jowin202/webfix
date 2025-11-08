@@ -65,16 +65,6 @@ async def get_current_channel(request : Request):
 
     return result
 
-@router.get("/online/{channel}/")
-async def get_channel_by_name(channel : str):
-
-    conn = await get_pg_connection() 
-    query = "SELECT u.username, u.username_html FROM users u, channels c WHERE u.channel_id = c.id AND u.token != '' AND c.name = $1"
-    result = await conn.fetch(query, channel)
-    await release_pg_connection(conn)
-
-    return result
-
 @router.get("/online_by_channel_id/{id}/")
 async def get_channel_by_id(id : int):
 
