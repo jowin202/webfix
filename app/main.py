@@ -201,13 +201,13 @@ async def websocket_endpoint(websocket: WebSocket):
         announcement_guests =  manager.get_setting("announcement_guests").replace("$USER", username)
         announcement_registered =  manager.get_setting("announcement_registered_users").replace("$USER", username)
 
-        if announcement and announcement != "":
-            await websocket.send_text(f'{{"cat": "announcement", "msg": "{announcement}"}}')
+        if announcement:
+            await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement}))
 
-        if is_guest and announcement_guests and announcement_guests != "":
-            await websocket.send_text(f'{{"cat": "announcement", "msg": "{announcement_guests}"}}')
-        elif announcement_registered and announcement_registered != "":
-            await websocket.send_text(f'{{"cat": "announcement", "msg": "{announcement_registered}"}}')
+        if is_guest and announcement_guests:
+            await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement_guests}))
+        elif announcement_registered:
+            await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement_registered}))
             
         while True:
             # Wait for any message or ping to keep the connection alive
