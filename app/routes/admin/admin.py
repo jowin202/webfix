@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from typing import Dict, Any, List
 from settings import SettingsManager
+from pydantic import BaseModel
 
 from db import pg_db_init, pg_db_remove, get_pg_connection, release_pg_connection
 
@@ -16,6 +17,9 @@ manager = SettingsManager()
 
 
 
+class MuteUserRequest(BaseModel):
+    username: str
+    time: int
 
 # also check activate account method in login
 @router.post("/admin_activate_account/")
@@ -73,26 +77,26 @@ async def kick_user(username : str, time : int):
     return status
 
 
-@router.post("/mute_user/{username}/{time}/")
-async def mute_user(username : str, time : int):
+@router.post("/mute_user/")
+async def mute_user(data : MuteUserRequest):
     conn = await get_pg_connection() 
     status = True
 
     try:
-        if time > 0:
+        if data.time > 0:
             query = '''
                 UPDATE users
                 SET muted_until = NOW() + (INTERVAL '1 second' * $2)
                 WHERE LOWER(username) = LOWER($1);
                 '''
-            await conn.execute(query, username, time)
-        elif time == 0:
+            await conn.execute(query, data.username, data.time)
+        elif data.time == 0:
             query = '''
                 UPDATE users
                 SET muted_until = 'infinity'
                 WHERE LOWER(username) = LOWER($1);
                 '''
-            await conn.execute(query, username)
+            await conn.execute(query, data.username)
     except Exception as e:
         status = False
     finally:

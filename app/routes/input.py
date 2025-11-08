@@ -56,9 +56,8 @@ async def write_text(data: SendMessageRequest, request: Request):
             quoted_payload = await conn.fetchval("SELECT quote_literal($1)", payload)
             await conn.execute(f"NOTIFY channel_{channel_id}, {quoted_payload}")
         else:
-            await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'statusmsg', 'username': '', 'msg': 'You are muted for ' + str(int(muted_seconds)) + ' seconds.'})}'")
+            await conn.execute(f"NOTIFY whisper_{id}, '{json.dumps({'cat': 'statusmsg', 'username': '', 'msg': 'You are muted for ' + str(int(muted_seconds)) + ' seconds.'})}'")
 
-            await conn.execute(f"NOTIFY whisper_{id}, 'You are muted for {muted_seconds} more seconds.'")
 
     await release_pg_connection(conn)
     return {"status": "notification sent", "message": data.message}
