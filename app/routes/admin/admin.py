@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 from db import pg_db_init, pg_db_remove, get_pg_connection, release_pg_connection
 
+import json
+
 router = APIRouter()
 
 
@@ -18,11 +20,13 @@ manager = SettingsManager()
 
 
 class MuteUserRequest(BaseModel):
-    username: str
+    silent: bool
+    user_id: int
     time: int
 
 class KickUserRequest(BaseModel):
-    username: str
+    silent: bool
+    user_id: int
     time: int
 
 
@@ -64,28 +68,50 @@ async def kick_user(data: KickUserRequest):
         if data.time > 0:
             query = '''
                 UPDATE users
-                SET kicked_until = NOW() + (INTERVAL '1 second' * $2)
-                WHERE username = $1;
+                SET kicked_until = NOW() + (INTERVAL '1 second' * $2),
+                token = '',
+                last_posted = NULL
+                WHERE id = $1;
                 '''
-            await conn.execute(query, data.username, data.time)
+            await conn.execute(query, data.user_id, data.time)
         elif data.time < 0:
             query = '''
                 UPDATE users
-                SET kicked_until = 'infinity'
-                WHERE LOWER(username) = LOWER($1);
+                SET kicked_until = 'infinity',
+                token = '',
+                last_posted = NULL
+                WHERE id = $1;
                 '''
-            await conn.execute(query, data.username)
+            await conn.execute(query, data.user_id)
         elif data.time == 0:
             query = '''
                 UPDATE users
                 SET kicked_until = '-infinity'
-                WHERE LOWER(username) = LOWER($1);
+                WHERE id = $1;
                 '''
-            await conn.execute(query, username)
+            await conn.execute(query, data.user_id)
 
 
-        # TODO: close stream
-    except:
+        # notify only for kicking
+        if data.time != 0:
+            query = '''
+                SELECT username, channel_id
+                FROM users
+                WHERE id = $1;
+                '''
+            result = await conn.fetchrow(query, data.user_id)
+            username = result['username']
+            channel_id = result['channel_id']
+            
+            #close stream
+            if not data.silent:
+                await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'statusmsg', 'username': 'ChatBot', 'msg': username + ' wurde gekickt.'})}'")
+            await conn.execute(f"NOTIFY whisper_{data.user_id}, 'exit'")
+
+
+
+    except Exception as e:
+        print(e, flush=True)
         status = False
     finally:
         await release_pg_connection(conn)
@@ -103,23 +129,43 @@ async def mute_user(data : MuteUserRequest):
             query = '''
                 UPDATE users
                 SET muted_until = NOW() + (INTERVAL '1 second' * $2)
-                WHERE LOWER(username) = LOWER($1);
+                WHERE id = $1;
                 '''
-            await conn.execute(query, data.username, data.time)
+            await conn.execute(query, data.user_id, data.time)
         elif data.time < 0:
             query = '''
                 UPDATE users
                 SET muted_until = 'infinity'
-                WHERE LOWER(username) = LOWER($1);
+                WHERE id = $1;
                 '''
-            await conn.execute(query, data.username)
+            await conn.execute(query, data.user_id)
         elif data.time == 0:
             query = '''
                 UPDATE users
                 SET muted_until = '-infinity'
-                WHERE LOWER(username) = LOWER($1);
+                WHERE id = $1;
                 '''
-            await conn.execute(query, data.username)
+            await conn.execute(query, data.user_id)
+
+
+        
+        # notify only muting 
+        if data.time != 0:
+            query = '''
+                SELECT username, channel_id
+                FROM users
+                WHERE id = $1;
+                '''
+            result = await conn.fetchrow(query, data.user_id)
+            username = result['username']
+            channel_id = result['channel_id']
+            
+            #close stream
+            if not data.silent:
+                time = data.time if data.time > 0 else 'infinite'
+                await conn.execute(f"NOTIFY channel_{channel_id}, '{json.dumps({'cat': 'statusmsg', 'username': 'ChatBot', 'msg': username + ' was muted for ' + str(time) + ' seconds.'})}'")
+
+
     except Exception as e:
         status = False
     finally:

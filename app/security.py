@@ -36,15 +36,17 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
     if ip_blocked:
         raise HTTPException(status_code=403, detail="Your IP is blocked.")
 
-    if result['kicked_seconds'] > 0:
-        raise HTTPException(status_code=403, detail="User is blocked.")
-    
     valid = False
     if result: # todo result as admin
         valid = True
 
     if not valid:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    if result['kicked_seconds'] > 0:
+        raise HTTPException(status_code=403, detail="User is blocked.")
+    
+
     request.state.user_id = result['id']
     request.state.admin = 0
     return token
