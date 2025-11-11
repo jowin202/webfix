@@ -151,7 +151,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close() # this only happen if error
         return # quit here
     finally:
-        await release_pg_connection(conn)
+        if (conn):
+            await release_pg_connection(conn)
 
     await websocket.accept()
     #await websocket.send_text(f'{{"cat": "statusmsg", "msg": "stream opened for {username}, id: {id}"}}')
@@ -160,9 +161,6 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(f'{{"cat": "statusmsg", "msg": "{message}"}}')
         await websocket.close()
         return
-
-
-
 
     async def switch_channel(new_channel_id):
         nonlocal current_listener, channel_id
@@ -187,11 +185,13 @@ async def websocket_endpoint(websocket: WebSocket):
             await notify_ws_wh(args, websocket,switch_channel_callback)
         return listener
 
+    global_listener = create_listener(websocket)
     current_listener = create_listener(websocket)
     whisper_listener = create_wh_listener(websocket,switch_channel)
 
 
     conn = await asyncpg.connect(**DB_CONFIG)
+    await conn.add_listener("global", global_listener)
     await conn.add_listener("channel_" + str(channel_id), current_listener)
     await conn.add_listener("whisper_" + str(id), whisper_listener)
 
@@ -218,6 +218,7 @@ async def websocket_endpoint(websocket: WebSocket):
         print("WebSocket error:", e)
     finally:
         print("Cleaning up...",flush=True)
+        await conn.remove_listener("global", global_listener)
         await conn.remove_listener("channel_" + str(channel_id), current_listener)
         await conn.remove_listener("whisper_" + str(id), whisper_listener)
         await conn.close()
