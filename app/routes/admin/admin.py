@@ -45,7 +45,8 @@ async def admin_activate_account(username : str):
     except:
         status = False
     finally:
-        await release_pg_connection(conn)
+        if conn:
+            await release_pg_connection(conn)
     return status
 
 
@@ -59,7 +60,20 @@ async def reset_database():
 
 
 
-#todo: change to ID
+
+@router.post("/announcement/")
+async def announcement(message: str):
+    conn = await get_pg_connection() 
+    try:
+        await conn.execute(f"NOTIFY global, '{json.dumps({'cat': 'announcement', 'msg': message})}'")
+    except:
+        pass
+    finally:
+        if conn:
+            await release_pg_connection(conn)
+
+
+
 @router.post("/kick_user/")
 async def kick_user(data: KickUserRequest):
     conn = await get_pg_connection() 
@@ -114,11 +128,11 @@ async def kick_user(data: KickUserRequest):
         print(e, flush=True)
         status = False
     finally:
-        await release_pg_connection(conn)
+        if conn:
+            await release_pg_connection(conn)
     return status
 
 
-#todo: change to ID
 @router.post("/mute_user/")
 async def mute_user(data : MuteUserRequest):
     conn = await get_pg_connection() 
@@ -169,7 +183,8 @@ async def mute_user(data : MuteUserRequest):
     except Exception as e:
         status = False
     finally:
-        await release_pg_connection(conn)
+        if conn:
+            await release_pg_connection(conn)
     return status
 
 
@@ -189,7 +204,8 @@ async def delete_user(user_id: int):
     except Exception as e:
         status = False
     finally:
-        await release_pg_connection(conn)
+        if conn:
+            await release_pg_connection(conn)
     return status
 
 
