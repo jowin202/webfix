@@ -34,8 +34,8 @@ interface Channels {
 export class ChatWindowComponent implements OnInit, OnDestroy {
   constructor(public api: ApiService, public auth: AuthService, public stream: StreamService) {
     effect(() => {
+      this.stream.user_changed_signal(); //trigger system
       this.update_online_list();
-      console.log("change user trigger detected");
     });
   }
 
@@ -77,7 +77,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   switchChannel(data: any) {
     this.api.post("/api/input/goto/" + data + "/", this.auth.token, {})
       .subscribe(result => {
-        this.update_online_list();
+        //do nothing, update user list is in constructor (stream service)
       });
   }
 
