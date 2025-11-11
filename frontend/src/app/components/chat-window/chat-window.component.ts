@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
@@ -32,7 +32,12 @@ interface Channels {
   styleUrl: './chat-window.component.scss'
 })
 export class ChatWindowComponent implements OnInit, OnDestroy {
-  constructor(public api: ApiService, public auth: AuthService, public stream: StreamService) { }
+  constructor(public api: ApiService, public auth: AuthService, public stream: StreamService) {
+    effect(() => {
+      this.update_online_list();
+      console.log("change user trigger detected");
+    });
+  }
 
 
   channels: Channels[] = [];
@@ -72,7 +77,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   switchChannel(data: any) {
     this.api.post("/api/input/goto/" + data + "/", this.auth.token, {})
       .subscribe(result => {
-        console.log(result);
+        this.update_online_list();
       });
   }
 

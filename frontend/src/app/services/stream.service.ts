@@ -1,7 +1,8 @@
-import { Injectable, Output } from '@angular/core';
+import { Injectable, Output, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { EventEmitter } from 'stream';
+
 
 
 export type PublicMessageCategory =
@@ -56,7 +57,8 @@ function getMessages(username: string): PrivateMessage[] {
 export class StreamService {
 
   constructor(public api : ApiService, public auth : AuthService) { }
-
+  
+  user_changed_signal = signal(0);
 
   messages: PublicMessage[] = [];
   privateMessages: PrivateMessagesByUser = {};
@@ -105,7 +107,7 @@ export class StreamService {
         this.messages.push({
           cat: "statusmsg",
           username: "ChatBot",
-          message: `<i>${result.msg}</i>`,
+          message: `${result.msg}`,
         });
       }
 
@@ -114,8 +116,9 @@ export class StreamService {
         this.messages.push({
           cat: "statusmsg",
           username: "ChatBot",
-          message: result.cat === "userleft" ? `<i>${result.username} left the channel</i>` : `<i>${result.username} joined the channel</i>`,
+          message: result.cat === "userleft" ? `${result.username} left the channel` : `${result.username} joined the channel`,
         });
+        this.user_changed_signal.update(v => v + 1); //change online list
       }
 
 
@@ -124,8 +127,9 @@ export class StreamService {
         this.messages.push({
           cat: "statusmsg",
           username: "ChatBot",
-          message: `<i>${result.username} ${result.msg}</i>`,
+          message: `${result.username} ${result.msg}`,
         });
+        this.user_changed_signal.update(v => v + 1); //change online list
       }
 
 
@@ -133,7 +137,7 @@ export class StreamService {
       else if ("cat" in result && result.cat === "announcement" && "msg" in result) {
         this.messages.push({
           cat: "announcement",
-          message: `<i>${result.msg}</i>`,
+          message: `${result.msg}`,
         });
       }
 

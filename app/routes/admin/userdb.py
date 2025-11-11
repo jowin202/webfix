@@ -83,29 +83,3 @@ async def update_user_by_id(id : int, data: SetUserRequest):
 
     return {"status": "updated", "id": id}
 
-
-@router.put("/set_user_by_name/{username}/")
-async def update_user_by_name(username : str, data: SetUserRequest):
-    conn = await get_pg_connection()
-
-    user = await conn.fetchrow("SELECT id FROM users WHERE LOWER(username) = LOWER($1)", username)
-    if not user:
-        raise HTTPException(status_code=404, detail="User with given username not found")
-
-    password = calc_hmac(data.password) if data.password else None
-    await conn.execute("""
-        UPDATE users
-        SET 
-            name = COALESCE($1, name),
-            tel = COALESCE($2, tel),
-            mail = COALESCE($3, mail),
-            fediverse_id = COALESCE($4, fediverse_id),
-            is_activated = COALESCE($5, is_activated),
-            visible = COALESCE($6, visible),
-            password = COALESCE($7, password),
-            login_msg = COALESCE($8, login_msg),
-            logout_msg = COALESCE($9, logout_msg)
-        WHERE LOWER(username) = LOWER($10)
-    """, data.name, data.tel, data.mail, data.fediverse_id, data.is_activated, data.visible, password, data.login_msg, data.logout_msg, username)
-
-    return {"status": "updated", "username": username}
