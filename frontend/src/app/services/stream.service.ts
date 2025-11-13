@@ -16,7 +16,7 @@ export type PublicMessageCategory =
   | "userenters"
   | "announcement";
 
-  
+
 export interface PublicMessage {
   cat: PublicMessageCategory;
   username?: string;
@@ -25,7 +25,7 @@ export interface PublicMessage {
 }
 
 export interface PrivateMessage {
-  from: string; 
+  from: string;
   message: string;
   timestamp?: Date;
 }
@@ -56,33 +56,42 @@ function getMessages(username: string): PrivateMessage[] {
 })
 export class StreamService {
 
-  constructor(public api : ApiService, public auth : AuthService) { }
-  
+  constructor(public api: ApiService, public auth: AuthService) { }
+
   user_changed_signal = signal(0);
 
   messages: PublicMessage[] = [];
   privateMessages: PrivateMessagesByUser = {};
 
-  
+
+  html_users: Record<string, string> = {};
+  add_usernames(entries: { username: string, username_html: string }[]) {
+    for (const e of entries) {
+      this.html_users[e.username] = e.username_html;
+    }
+  }
+
+
+
   connect_websocket() {
     this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
-      
-      
+
+
       if ("error_code" in result && result['error_code'] == -3) {
         this.messages.push({
           cat: "announcement",
           message: "<font color='red'>Stream closed, reconnect...</font>",
         });
       }
-      
+
       if ("username" in result && "message" in result && !("toUser" in result)) {
         this.messages.push({
           cat: "default",
-          username: result.username,
+          username: this.html_users[result.username] || result.username,
           message: result.message,
         });
       }
-      
+
       else if ("cat" in result && result.cat === "whisper" && "username" in result && "msg" in result) {
         const from = result.username;
         const msg: PrivateMessage = {
@@ -143,7 +152,7 @@ export class StreamService {
 
 
 
-        console.log(result);
+      console.log(result);
 
 
       // ... (weitere Fälle wie in deinem Originalcode)

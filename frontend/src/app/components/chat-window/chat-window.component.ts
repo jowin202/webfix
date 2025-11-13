@@ -60,6 +60,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
       .subscribe(result => {
         if (!("error_code" in result)) {
           this.onlineUsers = result
+          this.stream.add_usernames(result);
         }
       });
   }
