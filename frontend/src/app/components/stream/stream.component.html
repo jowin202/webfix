@@ -17,8 +17,8 @@
             </div>
           }
           @if (message.cat == 'statusmsg') {
-            <div>
-              <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+            <div style="font-style: italic;">
+              <span [innerHTML]="message.message"></span>
             </div>
           }
           @if (message.cat == 'announcement') {

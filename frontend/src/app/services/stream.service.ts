@@ -115,7 +115,6 @@ export class StreamService {
       else if ("cat" in result && result.cat === "statusmsg" && "msg" in result) {
         this.messages.push({
           cat: "statusmsg",
-          username: "ChatBot",
           message: `${result.msg}`,
         });
       }
@@ -124,8 +123,7 @@ export class StreamService {
       else if ("cat" in result && (result.cat === "userleft" || result.cat === "userenters") && "username" in result) {
         this.messages.push({
           cat: "statusmsg",
-          username: "ChatBot",
-          message: result.cat === "userleft" ? `${result.username} left the channel` : `${result.username} joined the channel`,
+          message: result.cat === "userleft" ? `${this.html_users[result.username] || result.username} left the channel` : `${this.html_users[result.username] || result.username} joined the channel`,
         });
         this.user_changed_signal.update(v => v + 1); //change online list
       }
@@ -135,8 +133,7 @@ export class StreamService {
       else if ("cat" in result && (result.cat === "userlogin" || result.cat === "userlogout") && "username" in result && "msg" in result) {
         this.messages.push({
           cat: "statusmsg",
-          username: "ChatBot",
-          message: `${result.username} ${result.msg}`,
+          message: `${this.html_users[result.username] || result.username} ${result.msg}`,
         });
         this.user_changed_signal.update(v => v + 1); //change online list
       }
@@ -152,7 +149,7 @@ export class StreamService {
 
 
 
-      console.log(result);
+      //console.log(result);
 
 
       // ... (weitere Fälle wie in deinem Originalcode)
