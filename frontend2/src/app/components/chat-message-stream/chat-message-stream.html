@@ -1,0 +1,15 @@
+<div class="message-stream-content">
+  @if (currentThread()) {
+    @for (message of currentThread()!.messages; track message.id) {
+      <div class="chat-message">
+        <span class="user-name">{{ message.user }}:</span>
+        <span class="message-text">{{ message.text }}</span>
+        <span class="timestamp"> ({{ message.time }})</span>
+      </div>
+    } @empty {
+      <div class="chat-message">
+        <span class="message-text">Starte eine Unterhaltung in {{ currentThread()!.name }}.</span>
+      </div>
+    }
+  }
+</div>

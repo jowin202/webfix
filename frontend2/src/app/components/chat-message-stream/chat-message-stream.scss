@@ -1,0 +1,20 @@
+/* Stile für die Komponente app-chat-message-stream */
+
+.chat-message {
+  display: block; 
+  margin-bottom: 8px;
+  line-height: 1.4;
+  font-size: 1rem;
+  word-wrap: break-word;
+
+  .user-name {
+    font-weight: bold;
+    margin-right: 5px;
+  }
+  
+  .timestamp {
+    font-size: 0.8rem;
+    color: #999;
+    margin-left: 10px;
+  }
+}

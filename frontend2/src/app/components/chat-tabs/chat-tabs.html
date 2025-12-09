@@ -1,0 +1,25 @@
+<mat-tab-group 
+  class="chat-tabs"
+  [selectedIndex]="currentTabIndex"
+  (selectedIndexChange)="onTabIndexChange($event)"
+>
+  @for (thread of activeThreads; track thread.id) {
+    <mat-tab>
+      <ng-template matTabLabel>
+        @if (thread.type === 'channel') {
+          <mat-icon>tag</mat-icon>
+        }
+        @if (thread.type === 'private') {
+          <mat-icon>lock</mat-icon>
+        }
+        {{ thread.name }}
+        
+        @if (thread.id !== 'channel-1') {
+          <button mat-icon-button (click)="onCloseThread(thread, $event)">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </ng-template>
+    </mat-tab>
+  }
+</mat-tab-group>

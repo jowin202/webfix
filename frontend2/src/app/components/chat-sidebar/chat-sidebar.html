@@ -1,0 +1,73 @@
+<div class="sidebar-tabs">
+    <button 
+        mat-button 
+        (click)="setActiveTab.emit('channels')" 
+        [class.active]="activeSidebarTab() === 'channels'"
+        >
+        <mat-icon>tag</mat-icon> Channels
+    </button>
+    <button 
+        mat-button 
+        (click)="setActiveTab.emit('users')" 
+        [class.active]="activeSidebarTab() === 'users'"
+        >
+        <mat-icon>people</mat-icon> Teilnehmer ({{ users().length }})
+    </button>
+</div>
+
+<mat-divider class="divider"></mat-divider>
+
+<div class="sidebar-content-scrollable">
+  
+  @if (activeSidebarTab() === 'channels') {
+    <mat-nav-list>
+      @for (channel of filteredChannels(); track channel.id) {
+        <mat-list-item
+          (click)="selectChannel.emit(channel)"
+          [activated]="currentThread()?.id === ('channel-' + channel.id)"
+          >
+          <mat-icon matListItemIcon>tag</mat-icon>
+          <span matListItemTitle>{{ channel.name }}</span>
+        </mat-list-item>
+      }
+    </mat-nav-list>
+  }
+  
+  @if (activeSidebarTab() === 'users') {
+    <mat-nav-list>
+      @for (user of filteredUsers(); track user.id) {
+        <mat-list-item 
+            (click)="openPrivateChat.emit(user)"
+            [activated]="currentThread()?.id === ('user-' + user.id)"
+            >
+          <mat-icon matListItemIcon>person</mat-icon>
+          <span matListItemTitle>{{ user.name }}</span>
+          <span matListItemLine>Online</span>
+        </mat-list-item>
+      }
+    </mat-nav-list>
+  }
+</div>
+<div class="sidebar-search-field">
+    <mat-form-field appearance="fill" class="full-width-search">
+        <mat-icon matPrefix>search</mat-icon>
+        <input 
+            matInput 
+            type="text" 
+            placeholder="Suchen..."
+            [ngModel]="searchTerm()"
+            (ngModelChange)="updateSearchTerm($event)"
+            autocomplete="off"
+        >
+        @if (searchTerm() && searchTerm().length > 0) { 
+            <button mat-icon-button matSuffix (click)="clearSearch()" aria-label="Suche löschen">
+                <mat-icon>close</mat-icon>
+            </button>
+        }
+    </mat-form-field>
+</div>
+<!--
+<button mat-button color="primary" (click)="addChatter.emit()" class="add-chatter-button">
+    <mat-icon>add</mat-icon> Chatter hinzufügen (Test)
+</button>
+-->

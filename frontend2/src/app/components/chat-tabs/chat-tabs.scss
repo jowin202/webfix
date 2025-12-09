@@ -1,0 +1,41 @@
+/* Stile für die Komponente app-chat-tabs */
+
+.chat-tabs {
+  height: 100%; 
+  flex-grow: 1; 
+
+  /* ::ng-deep ist notwendig, um in die gekapselte mat-tab-group Styles einzudringen */
+
+  /* Stile für den Tab-Header */
+  :host ::ng-deep .mat-mdc-tab-header {
+      border-bottom: none; 
+      .mat-mdc-tab {
+          min-width: 150px; 
+          padding: 0 15px; 
+      }
+  }
+
+  /* Stile für das Schließen-Icon in den Tabs */
+  :host ::ng-deep .mat-mdc-tab-label-content {
+    display: flex;
+    align-items: center;
+
+    button {
+        margin-left: 5px;
+        height: 20px;
+        width: 20px;
+        line-height: 20px;
+        
+        mat-icon {
+            font-size: 16px;
+            height: 16px;
+            width: 16px;
+            color: #ccc;
+        }
+        
+        &:hover mat-icon {
+            color: inherit; /* Besser als 'white', um Theming zu respektieren */ 
+        }
+    }
+  }
+}

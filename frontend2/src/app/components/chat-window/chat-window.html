@@ -1,0 +1,50 @@
+<mat-sidenav-container class="chat-container">
+  
+  <mat-sidenav #leftSidenav mode="side" opened class="left-sidebar">
+    
+    <app-chat-sidebar
+        [channels]="channels()"
+        [users]="users()"
+        [activeSidebarTab]="activeSidebarTab()"
+        [currentThread]="currentThread()"
+        (selectChannel)="selectChannel($event)"
+        (openPrivateChat)="openPrivateChat($event)"
+        (setActiveTab)="setActiveTab($event)"
+        (addChatter)="addChatter()"
+    ></app-chat-sidebar>
+    
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main-content">
+    
+    <mat-toolbar color="primary">
+      
+      <app-chat-tabs
+        [activeThreads]="activeThreads()"
+        [currentTabIndex]="currentTabIndex()"
+        (selectThread)="selectThread($event)"
+        (closeThread)="closeThread($event)"
+      ></app-chat-tabs>
+      
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="openSettings()" aria-label="Einstellungen öffnen">
+        <mat-icon>settings</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="message-stream-container" #messageContainer>
+        <app-chat-message-stream
+            [currentThread]="currentThread()"
+        ></app-chat-message-stream>
+    </div>
+
+    <app-chat-input
+        [(currentMessage)]="currentMessage"
+        (sendMessage)="handleSendMessage()"
+    ></app-chat-input>
+    
+  </mat-sidenav-content>
+
+    <mat-sidenav #rightSidenav mode="over" position="end" class="settings-sidebar">
+    </mat-sidenav>
+</mat-sidenav-container>
