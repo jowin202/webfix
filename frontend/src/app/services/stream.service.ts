@@ -74,7 +74,7 @@ export class StreamService {
 
 
   connect_websocket() {
-    this.api.connect_stream("/ws2", this.auth.token).subscribe(result => {
+    this.api.connect_stream("/api/stream/ws2", this.auth.token).subscribe(result => {
 
 
       if ("error_code" in result && result['error_code'] == -3) {

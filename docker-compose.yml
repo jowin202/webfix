@@ -28,8 +28,8 @@ services:
       FIDO2_RP_ID: ${FIDO2_RP_ID}
       FIDO2_RP_NAME: ${FIDO2_RP_NAME}
       FIDO2_ORIGIN: ${FIDO2_ORIGIN}
-    #volumes:
-    #  - ./app/:/app/
+    volumes:
+      - ./app/:/app/
 
   db:
     image: postgres:16
