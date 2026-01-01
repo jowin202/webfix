@@ -41,8 +41,8 @@
             [activated]="currentThread()?.id === ('user-' + user.id)"
             >
           <mat-icon matListItemIcon>person</mat-icon>
-          <span matListItemTitle>{{ user.name }}</span>
-          <span matListItemLine>Online</span>
+          <span matListItemTitle>{{ user.username }}</span>
+          <span matListItemLine>{{ user.status ==1 ? "Online": "Offline"}} </span>
         </mat-list-item>
       }
     </mat-nav-list>

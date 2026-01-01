@@ -11,9 +11,18 @@ export interface Channel {
   name: string;
 }
 
+
+export enum UserStatus {
+    OFFLINE = 0,
+    ONLINE = 1,
+    BUSY   = 2
+};
+
 export interface User {
   id: number;
-  name: string;
+  username: string;
+  username_html?: string;
+  status: UserStatus;
 }
 
 export interface ChatThread {

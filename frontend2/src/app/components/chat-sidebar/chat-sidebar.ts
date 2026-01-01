@@ -6,10 +6,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field'; 
 import { MatInputModule } from '@angular/material/input';         
 import { FormsModule } from '@angular/forms';                       
-// Die folgenden Interfaces benötigen wir, um die Typen der Input-Daten korrekt zu behandeln.
-// Da models.ts nicht bereitgestellt wurde, nehmen wir an, dass diese importiert werden können.
-interface Channel { id: number; name: string; }
-interface User { id: number; name: string; }
+
+import { User, Channel } from '../../models';
+
 interface ChatThread { id: string; type: 'channel' | 'private'; name: string; messages: any[]; } 
 
 @Component({
@@ -53,7 +52,7 @@ export class ChatSidebar {
         return allUsers;
     }
     return allUsers.filter(user => 
-        user.name.toLowerCase().includes(term)
+        user.username.toLowerCase().includes(term)
     );
   });
 
