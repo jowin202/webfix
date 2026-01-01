@@ -63,14 +63,6 @@ async def pg_db_init():
         return
 
     try:
-        await conn.execute('''
-            CREATE TABLE IF NOT EXISTS channels (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR UNIQUE,
-            visible BOOL DEFAULT true,
-            owner INTEGER -- FK added later
-            )
-        ''')
 
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -99,16 +91,18 @@ async def pg_db_init():
                 visible BOOL DEFAULT true,
                 kicked_until TIMESTAMP DEFAULT '-infinity',
                 muted_until TIMESTAMP DEFAULT '-infinity',
-                admin INT NOT NULL DEFAULT 0,
-                channel_id INTEGER NOT NULL DEFAULT 1,
-                FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE RESTRICT
+                admin INT NOT NULL DEFAULT 0
             )
         ''')
 
-
         await conn.execute('''
-            ALTER TABLE channels
-            ADD CONSTRAINT channels_owner_fkey FOREIGN KEY (owner) REFERENCES users(id) ON DELETE SET NULL
+            CREATE TABLE IF NOT EXISTS channels (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR UNIQUE,
+            always_available BOOL DEFAULT false,
+            password VARCHAR,
+            owner INTEGER REFERENCES users(id) ON DELETE CASCADE
+            )
         ''')
 
         # username unique case insensitive
@@ -116,15 +110,38 @@ async def pg_db_init():
 
 
         await conn.execute('''
-            INSERT INTO channels (id,name) VALUES (1,'Main Channel')
+            INSERT INTO channels (id,name,always_available) VALUES (1,'Main Channel',true)
             ON CONFLICT (name) DO NOTHING;
         ''')
 
         await conn.execute('''
-            INSERT INTO channels (id,name) VALUES (2,'Secondary Channel')
+            INSERT INTO channels (id,name,always_available) VALUES (2,'Secondary Channel',true)
             ON CONFLICT (name) DO NOTHING;
         ''')
 
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS channel_permissions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                channel_id INTEGER NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+
+                can_view BOOLEAN DEFAULT true,
+                role INTEGER DEFAULT 0,
+
+                UNIQUE (user_id, channel_id)
+            );
+        ''')
+
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS channel_members (
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
+
+                PRIMARY KEY (user_id, channel_id)
+            );
+        ''')
         
         # Insert default admin user if not exists
         await conn.execute('''

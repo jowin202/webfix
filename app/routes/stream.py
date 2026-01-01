@@ -22,20 +22,27 @@ DB_CONFIG = {
 }
 
 
-@router.websocket("/ws2")
-async def websocket_endpoint(websocket: WebSocket):
+
+
+
+
+# new
+@router.websocket("/ws3")
+async def websocket_endpoint_multi_channel(websocket: WebSocket):
     token = websocket.query_params.get("token")
 
     valid = False
     message = ""
     username = ""
     id = -1
-    channel_id = 1
+    channel_ids = []
     is_guest = False
     try:
         conn = await get_pg_connection()
+        
+        # basic infos
         query = '''
-            SELECT id, username, channel_id, remove_on_logout
+            SELECT id, username, remove_on_logout
             FROM users 
             WHERE token = $1 
         '''
@@ -44,11 +51,27 @@ async def websocket_endpoint(websocket: WebSocket):
             valid = True
             username = result['username']
             id = int(result['id'])
-            channel_id = int(result['channel_id'])
             is_guest = True if result['remove_on_logout'] else False
         else:
             message = "Unknown token"
         
+
+        # public channels
+        query = '''
+                SELECT id
+                FROM channels 
+                WHERE always_available = true 
+            UNION
+                SELECT channel_id
+                FROM channel_members
+                WHERE user_id = $1
+        '''
+        result = await conn.fetch(query, id) 
+        if result:
+            channel_ids = [row['id'] for row in result]
+            print(channel_ids, flush=True)
+
+
 
         x_forwarded_for = websocket.headers.get("x-forwarded-for")
         client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else websocket.client.host
@@ -79,37 +102,46 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    async def switch_channel(new_channel_id):
-        nonlocal current_listener, channel_id
-        #print(f"Switching from {channel_id} to {new_channel_id}", flush=True)
+
+    async def add_channel(channel_id):
+        nonlocal websocket, current_channel_listeners
         
-        payload1 = json.dumps({"cat": "userleft", "username": username})
-        payload2 = json.dumps({"cat": "userenters", "username": username})
+        payload = json.dumps({"cat": "userenters", "username": username, "channel": channel_id})
 
-        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload1}'")
-        await conn.remove_listener("channel_" + str(channel_id), current_listener)
-        channel_id = new_channel_id
-        await conn.add_listener("channel_" + str(channel_id), current_listener)
-        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload2}'")
+        listener = create_listener(websocket,add_channel,remove_channel)
+        current_channel_listeners[channel_id] = listener
+
+        await conn.add_listener("channel_" + str(channel_id), listener)
+        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload}'")
+
+
     
-    def create_listener(websocket):
+    async def remove_channel(channel_id):
+        nonlocal websocket, current_channel_listeners
+        
+        payload = json.dumps({"cat": "userleft", "username": username})
+        listener = current_channel_listeners[channel_id] 
+
+        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload}'")
+        await conn.remove_listener_listener("channel_" + str(channel_id), listener)
+        del current_channel_listeners[channel_id] 
+    
+
+
+    def create_listener(websocket, add_channel_callback, remove_channel_callback):
         async def listener(*args):
-            await notify_ws(args, websocket)
+            await notify_ws(args, websocket,add_channel_callback, remove_channel_callback)
         return listener
 
-    def create_wh_listener(websocket, switch_channel_callback):
-        async def listener(*args):
-            await notify_ws_wh(args, websocket,switch_channel_callback)
-        return listener
-
-    global_listener = create_listener(websocket)
-    current_listener = create_listener(websocket)
-    whisper_listener = create_wh_listener(websocket,switch_channel)
+    current_channel_listeners: dict[int, ChannelListener] = {}
+    global_listener = create_listener(websocket,add_channel,remove_channel)
+    whisper_listener = create_listener(websocket,add_channel,remove_channel)
 
 
     conn = await asyncpg.connect(**DB_CONFIG)
     await conn.add_listener("global", global_listener)
-    await conn.add_listener("channel_" + str(channel_id), current_listener)
+    for channel_id in channel_ids:
+        await add_channel(channel_id)
     await conn.add_listener("whisper_" + str(id), whisper_listener)
 
     try:
@@ -136,19 +168,12 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         print("Cleaning up...",flush=True)
         await conn.remove_listener("global", global_listener)
-        await conn.remove_listener("channel_" + str(channel_id), current_listener)
         await conn.remove_listener("whisper_" + str(id), whisper_listener)
         await conn.close()
 
 
-async def notify_ws(args, websocket: WebSocket):
-    _, pid, channel, payload = args
-    try:
-        await websocket.send_text(payload)
-    except:
-        pass
 
-async def notify_ws_wh(args, websocket: WebSocket, switch_channel_callback):
+async def notify_ws(args, websocket: WebSocket, add_channel_callback, remove_channel_callback):
     _, pid, channel, payload = args
     if payload == 'exit':
         try:
@@ -156,8 +181,10 @@ async def notify_ws_wh(args, websocket: WebSocket, switch_channel_callback):
         except:
             pass
         await websocket.close()
-    elif payload.startswith("goto"):
-        await switch_channel_callback(int(payload.split()[1]))
+    elif payload.startswith("add"):
+        await add_channel_callback(int(payload.split()[1]))
+    elif payload.startswith("remove"):
+        await remove_channel_callback(int(payload.split()[1]))
     else:
         await websocket.send_text(payload)
 

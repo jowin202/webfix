@@ -105,8 +105,6 @@ async def login_page_info():
         conn = await get_pg_connection() 
         data = await conn.fetch("SELECT username FROM users WHERE token != ''")
         online_list = [record['username'] for record in data]
-        data = await conn.fetch("SELECT name FROM channels WHERE visible = true")
-        channels = [record['name'] for record in data]
     except Exception as e:
         print(str(e),flush=True)
     finally:
@@ -121,6 +119,5 @@ async def login_page_info():
             "display_online": True, 
             "num_users": len(online_list), 
             "show_rooms": True, 
-            "channels": channels
             }
 

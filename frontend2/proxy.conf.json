@@ -3,7 +3,12 @@
     "target": "http://localhost:8000",
     "secure": false
   },
-  "/ws2": {
+  "/api/stream/ws2": {
+    "target": "http://localhost:8000",
+    "ws": true,
+    "secure": false
+  },
+  "/api/stream/ws3": {
     "target": "http://localhost:8000",
     "ws": true,
     "secure": false

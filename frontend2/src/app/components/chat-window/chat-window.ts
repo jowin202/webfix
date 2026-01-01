@@ -10,6 +10,9 @@ import { ChatMessageStream } from '../chat-message-stream/chat-message-stream';
 import { ChatInput } from '../chat-input/chat-input';
 // Import der Interfaces
 import { Message, Channel, User, ChatThread } from '../../models';
+import { AuthService } from '../../services/auth.service';
+import { ApiService } from '../../services/api.service';
+import { StreamService } from '../../services/stream.service';
 
 // ------------------
 
@@ -99,7 +102,7 @@ export class ChatWindow {
 
   private nextUserId = 31;
 
-  constructor() {
+  constructor(public stream: StreamService) {
     const generalThread: ChatThread = {
       id: 'channel-1',
       type: 'channel',
@@ -108,6 +111,8 @@ export class ChatWindow {
     };
     this.activeThreads.set([generalThread]);
     this.currentThread.set(generalThread);
+
+    this.stream.connect();
   }
 
   // --- METHODEN (Die State-Änderungslogik bleibt hier) ---

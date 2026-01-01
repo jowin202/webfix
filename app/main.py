@@ -78,6 +78,7 @@ app = FastAPI(title="Webfix API", lifespan=lifespan)
 
 from routes import stream
 from routes import input
+from routes import channels
 from routes import login
 from routes import register
 from routes import pwmanage
@@ -91,6 +92,7 @@ from routes.admin import admin
 
 app.include_router(stream.router, tags=["stream"], prefix="/api/stream")
 app.include_router(input.router, tags=["input"], prefix="/api/input", dependencies=[Depends(verify_token)])
+app.include_router(channels.router, tags=["channels"], prefix="/api/channels", dependencies=[Depends(verify_token)])
 app.include_router(login.router, tags=["login"], prefix="/api/login")
 app.include_router(register.router, tags=["register"], prefix="/api/register")
 app.include_router(pwmanage.router, tags=["pwmanage"], prefix="/api/pwmanage")
