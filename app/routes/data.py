@@ -96,7 +96,7 @@ async def get_user_info(request : Request):
     query = """
         SELECT id, username, username_html, name, tel,mail, fediverse_id, login_msg, logout_msg,
         online_time, created, last_posted, last_login, login_count, remove_on_logout, 
-        admin, channel_id
+        admin
         FROM users 
         WHERE id = $1
     """

@@ -1,0 +1,93 @@
+<mat-card>
+  <mat-card-title>User Information</mat-card-title>
+  <mat-card-content>
+
+    <form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
+
+      <div class="form-grid">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Username (HTML)</mat-label>
+          <input matInput name="username_html"
+                 [ngModel]="userinfo.username_html">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput name="name"
+                 [ngModel]="userinfo.name">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Telephone</mat-label>
+          <input matInput name="tel"
+                 [ngModel]="userinfo.tel">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email"
+                 name="mail"
+                 [ngModel]="userinfo.mail">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fediverse ID</mat-label>
+          <input matInput name="fediverse_id"
+                 [ngModel]="userinfo.fediverse_id">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Login Message</mat-label>
+          <input matInput name="login_msg"
+                 [ngModel]="userinfo.login_msg">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Logout Message</mat-label>
+          <input matInput name="logout_msg"
+                 [ngModel]="userinfo.logout_msg">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>New Password</mat-label>
+          <input matInput type="password"
+                 name="password"
+                 ngModel>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirm Password</mat-label>
+          <input matInput type="password"
+                 name="password2"
+                 ngModel>
+        </mat-form-field>
+
+      </div>
+
+      <!-- Feedback -->
+      <div class="form-messages">
+        @if (error_at_html_user) {
+          <p class="error">Username must match HTML username</p>
+        }
+        @if (change_pw) {
+          <p class="success">Password changed successfully</p>
+        }
+      </div>
+
+      <mat-card-actions align="end">
+        <button mat-raised-button color="primary"
+          type="submit"
+          [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
+          Save
+        </button>
+
+        <button mat-button type="button"
+                (click)="closeEvent.emit()">
+          Close
+        </button>
+      </mat-card-actions>
+
+    </form>
+  </mat-card-content>
+</mat-card>

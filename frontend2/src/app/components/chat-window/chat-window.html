@@ -10,7 +10,6 @@
         (selectChannel)="selectChannel($event)"
         (openPrivateChat)="openPrivateChat($event)"
         (setActiveTab)="setActiveTab($event)"
-        (addChatter)="addChatter()"
     ></app-chat-sidebar>
     
   </mat-sidenav>
@@ -46,5 +45,6 @@
   </mat-sidenav-content>
 
     <mat-sidenav #rightSidenav mode="over" position="end" class="settings-sidebar">
+      <app-user-menu (closeEvent)="this.openSettings()"></app-user-menu>
     </mat-sidenav>
 </mat-sidenav-container>

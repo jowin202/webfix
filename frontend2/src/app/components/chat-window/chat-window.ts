@@ -13,6 +13,7 @@ import { Message, Channel, User, ChatThread } from '../../models';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { StreamService } from '../../services/stream.service';
+import { UserMenu } from "../user-menu/user-menu";
 
 // ------------------
 
@@ -27,8 +28,9 @@ import { StreamService } from '../../services/stream.service';
     ChatSidebar,
     ChatTabs,
     ChatMessageStream,
-    ChatInput
-  ],
+    ChatInput,
+    UserMenu
+],
   templateUrl: './chat-window.html',
   styleUrl: './chat-window.scss'
 })
@@ -52,42 +54,28 @@ export class ChatWindow {
     return this.activeThreads().findIndex(t => t.id === current.id);
   });
 
-  // --- MOCK DATEN ALS SIGNALS ---
-  channels: WritableSignal<Channel[]> = signal([
-    { id: 1, name: '#general' }, { id: 2, name: '#announcements' },
-    { id: 3, name: '#dev-backend' }, { id: 4, name: '#dev-frontend-angular' },
-    { id: 5, name: '#design-ui-ux' }, { id: 6, name: '#qa-testing' },
-    { id: 7, name: '#helpdesk-support' }, { id: 8, name: '#product-management' },
-    { id: 9, name: '#marketing-sales' }, { id: 10, name: '#finance-hr' },
-    { id: 11, name: '#random-talk' }, { id: 12, name: '#berlin-office' },
-    { id: 13, name: '#munich-office' }, { id: 14, name: '#cloud-infrastructure' },
-    { id: 15, name: '#security-audit' }, { id: 16, name: '#onboarding-new' },
-    { id: 17, name: '#data-science' }, { id: 18, name: '#mobile-apps' },
-    { id: 19, name: '#api-integration' }, { id: 20, name: '#release-management' },
-    { id: 21, name: '#tech-talk-tuesday' }, { id: 22, name: '#coffee-break-club' },
-    { id: 23, name: '#feedback-corner' }, { id: 24, name: '#project-mercury' },
-    { id: 25, name: '#project-venus' }, { id: 26, name: '#external-partners' },
-    { id: 27, name: '#code-reviews' }, { id: 28, name: '#accessibility' },
-    { id: 29, name: '#iot-experiments' }, { id: 30, name: '#open-source' },
-  ]);
+  
+  channels: WritableSignal<Channel[]> = signal([  ]);
+  get_channels() {
+    this.api.get("/api/data/channels/", this.auth.token())
+      .subscribe(result => {
+        if (!("error_code" in result)) {
+          this.channels.set(result);
+        }
+      });
+  }
+  
 
-  users: WritableSignal<User[]> = signal([
-    { id: 1, name: 'Alice Müller' }, { id: 2, name: 'Bob Schmidt' },
-    { id: 3, name: 'Clara Weber' }, { id: 4, name: 'David Fischer' },
-    { id: 5, name: 'Emilia Meyer' }, { id: 6, name: 'Felix Wagner' },
-    { id: 7, name: 'Greta Becker' }, { id: 8, name: 'Hannes Schulz' },
-    { id: 9, name: 'Ida Hoffmann' }, { id: 10, name: 'Jakob Schäfer' },
-    { id: 11, name: 'Kim Koch' }, { id: 12, name: 'Leo Bauer' },
-    { id: 13, name: 'Mia Richter' }, { id: 14, name: 'Nico Wolf' },
-    { id: 15, name: 'Paula Neumann' }, { id: 16, name: 'Quentin Voss' },
-    { id: 17, name: 'Romy Scholz' }, { id: 18, name: 'Simon König' },
-    { id: 19, name: 'Tanja Lorenz' }, { id: 20, name: 'Ulf Schneider' },
-    { id: 21, name: 'Vera Zimmermann' }, { id: 22, name: 'Walter Haas' },
-    { id: 23, name: 'Xenia Lange' }, { id: 24, name: 'Yannik Keller' },
-    { id: 25, name: 'Zoe Hartwig' }, { id: 26, name: 'Adrian Jung' },
-    { id: 27, name: 'Bianca Schott' }, { id: 28, name: 'Chris Ebert' },
-    { id: 29, name: 'Diana Seifert' }, { id: 30, name: 'Erik Brand' },
-  ]);
+  users: WritableSignal<User[]> = signal([]);
+  get_online_users() {
+    this.api.get("/api/data/users/", this.auth.token())
+      .subscribe(result => {
+        if (!("error_code" in result)) {
+          this.users.set(result);
+        }
+      });
+  }
+
 
   initialMessages: Message[] = [
     { id: 1, user: 'System', text: 'Willkommen im #DevTeam Channel. Bitte beachte die Code-Konventionen.', time: '10:00' },
@@ -102,7 +90,7 @@ export class ChatWindow {
 
   private nextUserId = 31;
 
-  constructor(public stream: StreamService) {
+  constructor(public stream: StreamService, public api: ApiService, public auth: AuthService) {
     const generalThread: ChatThread = {
       id: 'channel-1',
       type: 'channel',
@@ -111,6 +99,9 @@ export class ChatWindow {
     };
     this.activeThreads.set([generalThread]);
     this.currentThread.set(generalThread);
+
+    this.get_online_users();
+    this.get_channels();
 
     this.stream.connect();
   }
@@ -187,9 +178,9 @@ export class ChatWindow {
     const privateThread: ChatThread = {
       id: `user-${user.id}`,
       type: 'private',
-      name: user.name,
+      name: user.username,
       messages: [
-        { id: 1, user: 'System', text: `Privater Chat mit ${user.name} gestartet.`, time: '10:00' }
+        { id: 1, user: 'System', text: `Privater Chat mit ${user.username} gestartet.`, time: '10:00' }
       ]
     };
     this.selectThread(privateThread);
@@ -208,10 +199,12 @@ export class ChatWindow {
     }
   }
 
+
+  /*
   addChatter(): void {
     const newUser: User = {
       id: this.nextUserId++,
-      name: `Neuer Chatter ${this.nextUserId}`
+      username: `Neuer Chatter ${this.nextUserId}`
     };
     this.users.update(currentUsers => [...currentUsers, newUser]);
     
@@ -226,4 +219,5 @@ export class ChatWindow {
         this.activeThreads.update(threads => [...threads]);
     }
   }
+*/
 }
