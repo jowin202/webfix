@@ -19,6 +19,12 @@ html, body {
   box-sizing: border-box; 
 }
 
+/* Basis-Layout der linken Sidebar (definiert in app.html) */
+.settings-sidebar {
+  width: 500px; 
+}
+
+
 /* Haupt-Content-Bereich (Toolbar, Nachrichten, Input) */
 .main-content {
   display: flex;

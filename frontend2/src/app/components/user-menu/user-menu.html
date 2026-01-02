@@ -1,93 +1,197 @@
 <mat-card>
-  <mat-card-title>User Information</mat-card-title>
-  <mat-card-content>
+    <mat-card-title>User Information</mat-card-title>
+    <mat-card-content>
 
-    <form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
+        <form #userMenuForm="ngForm" (ngSubmit)="do_changes(userMenuForm.value)">
 
-      <div class="form-grid">
+            <div class="form-grid">
 
-        <mat-form-field appearance="outline">
-          <mat-label>Username (HTML)</mat-label>
-          <input matInput name="username_html"
-                 [ngModel]="userinfo.username_html">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Username (HTML)</mat-label>
+                    <input matInput name="username_html" [ngModel]="userinfo.username_html">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Name</mat-label>
-          <input matInput name="name"
-                 [ngModel]="userinfo.name">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Name</mat-label>
+                    <input matInput name="name" [ngModel]="userinfo.name">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Telephone</mat-label>
-          <input matInput name="tel"
-                 [ngModel]="userinfo.tel">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Telephone</mat-label>
+                    <input matInput name="tel" [ngModel]="userinfo.tel">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <input matInput type="email"
-                 name="mail"
-                 [ngModel]="userinfo.mail">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput type="email" name="mail" [ngModel]="userinfo.mail">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Fediverse ID</mat-label>
-          <input matInput name="fediverse_id"
-                 [ngModel]="userinfo.fediverse_id">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Fediverse ID</mat-label>
+                    <input matInput name="fediverse_id" [ngModel]="userinfo.fediverse_id">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Login Message</mat-label>
-          <input matInput name="login_msg"
-                 [ngModel]="userinfo.login_msg">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Login Message</mat-label>
+                    <input matInput name="login_msg" [ngModel]="userinfo.login_msg">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Logout Message</mat-label>
-          <input matInput name="logout_msg"
-                 [ngModel]="userinfo.logout_msg">
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Logout Message</mat-label>
+                    <input matInput name="logout_msg" [ngModel]="userinfo.logout_msg">
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>New Password</mat-label>
-          <input matInput type="password"
-                 name="password"
-                 ngModel>
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>New Password</mat-label>
+                    <input matInput type="password" name="password" ngModel>
+                </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Confirm Password</mat-label>
-          <input matInput type="password"
-                 name="password2"
-                 ngModel>
-        </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Confirm Password</mat-label>
+                    <input matInput type="password" name="password2" ngModel>
+                </mat-form-field>
 
-      </div>
+            </div>
 
-      <!-- Feedback -->
-      <div class="form-messages">
-        @if (error_at_html_user) {
-          <p class="error">Username must match HTML username</p>
-        }
-        @if (change_pw) {
-          <p class="success">Password changed successfully</p>
-        }
-      </div>
+            <!-- Feedback -->
+            <div class="form-messages">
+                @if (error_at_html_user) {
+                <p class="error">Username must match HTML username</p>
+                }
+                @if (change_pw) {
+                <p class="success">Password changed successfully</p>
+                }
+            </div>
 
-      <mat-card-actions align="end">
-        <button mat-raised-button color="primary"
-          type="submit"
-          [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
-          Save
-        </button>
+            <mat-card-actions align="end">
+                <button mat-raised-button color="primary" type="submit"
+                    [disabled]="userMenuForm.value.password !== userMenuForm.value.password2">
+                    Save
+                </button>
 
-        <button mat-button type="button"
-                (click)="closeEvent.emit()">
-          Close
-        </button>
-      </mat-card-actions>
+                <button mat-button type="button" (click)="closeEvent.emit()">
+                    Close
+                </button>
+            </mat-card-actions>
+
+        </form>
+    </mat-card-content>
+</mat-card>
+
+
+
+
+<mat-card>
+    <mat-card-title>Color Gradient</mat-card-title>
+
+    <form #gradientForm="ngForm" (ngSubmit)="do_color_gradient(gradientForm.value)">
+
+        <mat-card-content>
+
+            <mat-form-field appearance="outline">
+                <mat-label>First Color</mat-label>
+                <input matInput name="col1" ngModel>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Second Color</mat-label>
+                <input matInput name="col2" ngModel>
+            </mat-form-field>
+
+            @if (color_gradient_error === true) {
+            <p class="error">Error changing gradient</p>
+            }
+            @if (color_gradient_error === false) {
+            <p class="success">Gradient updated</p>
+            }
+
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+            <button mat-raised-button color="accent" type="submit">
+                Save
+            </button>
+        </mat-card-actions>
 
     </form>
-  </mat-card-content>
+</mat-card>
+
+
+@if (fido_credentials.length > 0) {
+<mat-card>
+    <mat-card-title>Existing FIDO2 Credentials</mat-card-title>
+
+    <table mat-table [dataSource]="fido_credentials">
+
+        <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let c">{{ c.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sign_count">
+            <th mat-header-cell *matHeaderCellDef>Sign Count</th>
+            <td mat-cell *matCellDef="let c">{{ c.sign_count }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="last_used">
+            <th mat-header-cell *matHeaderCellDef>Last Login</th>
+            <td mat-cell *matCellDef="let c">
+                {{ formatTime(c.last_used_at) }}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let c">
+                <button mat-icon-button color="warn" (click)="fido_credentials_delete(c.id)">
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['name','sign_count','last_used','actions']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['name','sign_count','last_used','actions']"></tr>
+    </table>
+</mat-card>
+}
+
+<mat-card>
+    <mat-card-title>Create FIDO2 Credential</mat-card-title>
+
+    <form (ngSubmit)="do_fido_register(fidopassw.value, fidoname.value)">
+
+        <mat-card-content>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Current Password</mat-label>
+                <input matInput type="password" #fidopassw>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Credential Name</mat-label>
+                <input matInput #fidoname>
+            </mat-form-field>
+
+            @if (no_challenge_error) {
+            <p class="error">Timeout while registering token</p>
+            }
+            @if (double_register_error) {
+            <p class="error">Credential already exists</p>
+            }
+            @if (wrong_password_error) {
+            <p class="error">Wrong password</p>
+            }
+            @if (fido_successfull) {
+            <p class="success">Credential created successfully</p>
+            }
+
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+            <button mat-raised-button color="primary" type="submit">
+                Register FIDO2 Token
+            </button>
+        </mat-card-actions>
+
+    </form>
 </mat-card>
