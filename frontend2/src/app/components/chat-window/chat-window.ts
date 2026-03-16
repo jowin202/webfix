@@ -51,13 +51,14 @@ export class ChatWindow {
     return this.activeThreads().findIndex(t => t.id === current.id);
   });
 
-  channels: WritableSignal<Channel[]> = signal([]);
+  channels: WritableSignal<Channel[]> = signal([
+    { id: 1, name: 'Main Channel', always_available: true, is_member: true }
+  ]);
   get_channels() {
-    this.api.get("/api/data/channels/", this.auth.token())
+    this.api.get("/api/channels/list/", this.auth.token())
       .subscribe(result => {
-        if (!("error_code" in result)) {
-          this.channels.set(result);
-        }
+        if (this.hasApiError(result)) return;
+        this.channels.set(result);
       });
   }
   
@@ -66,14 +67,15 @@ export class ChatWindow {
   get_online_users() {
     this.api.get("/api/data/users/", this.auth.token())
       .subscribe(result => {
-        if (!("error_code" in result)) {
-          this.users.set(result);
-          this.stream.addUsernames(result);
-        }
+        if (this.hasApiError(result)) return;
+        this.users.set(result);
+        this.stream.addUsernames(result);
       });
   }
 
   private processedStreamMessages = 0;
+  private subscribedChannelIds = new Set<number>();
+  private initialized = false;
 
   constructor(public stream: StreamService, public api: ApiService, public auth: AuthService) {
     const generalThread: ChatThread = {
@@ -85,14 +87,25 @@ export class ChatWindow {
     this.activeThreads.set([generalThread]);
     this.currentThread.set(generalThread);
 
-    this.get_online_users();
-    this.get_channels();
+    effect(() => {
+      if (this.initialized) return;
+      if (!this.auth.ready() || !this.auth.logged_in() || !this.auth.token()) return;
+      this.initialized = true;
 
-    this.stream.connect();
+      this.get_online_users();
+      this.get_channels();
+      this.stream.connect();
+      this.subscribeToChannel(1);
+    });
 
     effect(() => {
       this.stream.userChanged();
       this.get_online_users();
+    });
+
+    effect(() => {
+      this.stream.channelChanged();
+      this.get_channels();
     });
 
     effect(() => {
@@ -145,6 +158,35 @@ export class ChatWindow {
     if (!threadId.startsWith('channel-')) return null;
     const id = Number(threadId.slice('channel-'.length));
     return Number.isFinite(id) ? id : null;
+  }
+
+  private hasApiError(result: any): boolean {
+    if (!result) return true;
+    if (Array.isArray(result) && result.length > 0 && result[0] && typeof result[0] === 'object' && "error_code" in result[0]) return true;
+    if (typeof result !== 'object') return true;
+    return "error_code" in result;
+  }
+
+  private apiErrorCode(result: any): number | null {
+    if (!result) return null;
+    if (Array.isArray(result) && result.length > 0 && result[0] && typeof result[0] === 'object' && "error_code" in result[0]) {
+      return Number(result[0].error_code);
+    }
+    if (typeof result !== 'object') return null;
+    if ("error_code" in result) return Number(result.error_code);
+    return null;
+  }
+
+  private subscribeToChannel(channelId: number) {
+    if (this.subscribedChannelIds.has(channelId)) return;
+    this.subscribedChannelIds.add(channelId);
+    this.stream.subscribeChannel(channelId);
+  }
+
+  private unsubscribeFromChannel(channelId: number) {
+    if (!this.subscribedChannelIds.has(channelId)) return;
+    this.subscribedChannelIds.delete(channelId);
+    this.stream.unsubscribeChannel(channelId);
   }
 
   private appendMessageToThread(threadId: string, createThread: () => ChatThread, user: string, text: string) {
@@ -272,17 +314,81 @@ export class ChatWindow {
     } else {
       this.currentThread.set(existingThread);
     }
+    if (thread.type === 'channel') {
+      const channelId = this.getChannelIdFromThreadId(thread.id);
+      if (channelId) this.subscribeToChannel(channelId);
+    }
     setTimeout(() => this.scrollToBottom(), 0);
   }
 
   selectChannel(channel: Channel): void {
+    if (!channel.is_member && !channel.always_available) {
+      let password = '';
+      if (channel.has_password) {
+        const entered = window.prompt(`Passwort für ${channel.name}:`);
+        if (entered === null) return;
+        password = entered;
+      }
+      this.api.post(`/api/channels/join/${channel.id}/`, this.auth.token(), { password })
+        .subscribe(result => {
+          if (this.hasApiError(result)) return;
+          this.get_channels();
+          this.selectChannel({ ...channel, is_member: true });
+        });
+      return;
+    }
+
     const channelThread: ChatThread = {
       id: this.channelThreadId(channel.id),
       type: 'channel',
       name: channel.name,
       messages: []
     };
+    this.subscribeToChannel(channel.id);
     this.selectThread(channelThread);
+  }
+
+  createChannel(data: { name: string; password?: string; invite_only: boolean }) {
+    const params = new URLSearchParams({
+      name: data.name,
+      password: data.password ?? '',
+      invite_only: String(data.invite_only),
+    });
+
+    this.api.post(`/api/channels/create_channel/?${params.toString()}`, this.auth.token(), null)
+      .subscribe(result => {
+        const errorCode = this.apiErrorCode(result);
+        if (errorCode !== null) {
+          if (errorCode === 409) {
+            this.api.get("/api/channels/list/", this.auth.token()).subscribe(channels => {
+              if (!Array.isArray(channels)) return;
+              this.channels.set(channels);
+              const existing = channels.find((channel: Channel) =>
+                channel.name.trim().toLowerCase() === data.name.trim().toLowerCase()
+              );
+              if (existing) this.selectChannel(existing);
+            });
+          }
+          return;
+        }
+
+        const channelId = Number(result.channel_id);
+        this.get_channels();
+        if (channelId) {
+          this.selectChannel({
+            id: channelId,
+            name: data.name,
+            is_member: true,
+            has_password: !!data.password,
+            invite_only: data.invite_only
+          });
+        }
+      });
+  }
+
+  inviteUser(data: { channel_id: number; username: string }) {
+    this.api.post('/api/channels/invite/', this.auth.token(), data)
+      .subscribe(_ => this.get_channels());
   }
 
   openPrivateChat(user: User): void {
@@ -299,6 +405,11 @@ export class ChatWindow {
     data.event.stopPropagation();
 
     this.activeThreads.update(threads => threads.filter(t => t.id !== data.thread.id));
+
+    if (data.thread.type === 'channel') {
+      const channelId = this.getChannelIdFromThreadId(data.thread.id);
+      if (channelId) this.unsubscribeFromChannel(channelId);
+    }
 
     if (this.currentThread()?.id === data.thread.id) {
       const remainingThreads = this.activeThreads();

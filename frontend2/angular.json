@@ -27,7 +27,9 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "public/fonts.css",
+              "public/icons.css"
             ],
             "server": "src/main.server.ts",
             "outputMode": "server",
@@ -89,7 +91,9 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "public/fonts.css",
+              "public/icons.css"
             ]
           }
         }

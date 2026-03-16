@@ -20,6 +20,21 @@
 <div class="sidebar-content-scrollable">
   
   @if (activeSidebarTab() === 'channels') {
+    <div class="sidebar-search-field">
+      <mat-form-field appearance="fill" class="full-width-search">
+        <mat-label>Neuer Channel</mat-label>
+        <input matInput [(ngModel)]="newChannelName" placeholder="Name">
+      </mat-form-field>
+      <mat-form-field appearance="fill" class="full-width-search">
+        <mat-label>Passwort (optional)</mat-label>
+        <input matInput [(ngModel)]="newChannelPassword" placeholder="Passwort">
+      </mat-form-field>
+      <label>
+        <input type="checkbox" [(ngModel)]="newChannelInviteOnly"> Nur mit Einladung
+      </label>
+      <button mat-button color="primary" (click)="onCreateChannel()">Erstellen</button>
+    </div>
+
     <mat-nav-list>
       @for (channel of filteredChannels(); track channel.id) {
         <mat-list-item
@@ -28,9 +43,28 @@
           >
           <mat-icon matListItemIcon>tag</mat-icon>
           <span matListItemTitle>{{ channel.name }}</span>
+          <span matListItemLine>
+            @if (channel.has_password) { passwortgeschuetzt }
+            @if (channel.invite_only) { invite-only }
+            @if (channel.is_member) { Mitglied }
+            @else if (channel.is_invited) { Eingeladen }
+            @else { Join verfügbar }
+          </span>
         </mat-list-item>
       }
     </mat-nav-list>
+
+    <div class="sidebar-search-field">
+      <mat-form-field appearance="fill" class="full-width-search">
+        <mat-label>Invite Channel ID</mat-label>
+        <input matInput type="number" [(ngModel)]="inviteChannelId" placeholder="z.B. 5">
+      </mat-form-field>
+      <mat-form-field appearance="fill" class="full-width-search">
+        <mat-label>User für Einladung</mat-label>
+        <input matInput [(ngModel)]="inviteUsername" placeholder="username">
+      </mat-form-field>
+      <button mat-button color="primary" (click)="onInviteUser()">Einladen</button>
+    </div>
   }
   
   @if (activeSidebarTab() === 'users') {

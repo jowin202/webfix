@@ -10,12 +10,17 @@ import { isPlatformBrowser } from '@angular/common';
 @Injectable({ providedIn: 'root' })
 export class StreamService {
     constructor(private api: ApiService, private auth: AuthService) { }
+    private platformId = inject(PLATFORM_ID);
+
+    private socket: WebSocket | null = null;
+    private pendingCommands: string[] = [];
 
     /* ───────────── Signals (State) ───────────── */
 
     readonly messages = signal<PublicMessage[]>([]);
     readonly privateMessages = signal<PrivateMessagesByUser>({});
     readonly userChanged = signal(0);
+    readonly channelChanged = signal(0);
 
     readonly htmlUsers = signal<Record<string, string>>({});
 
@@ -24,22 +29,52 @@ export class StreamService {
 
     connect_stream(url: string, token?: string): Observable<unknown> {
         return new Observable(observer => {
+            const separator = url.includes('?') ? '&' : '?';
             const ws = new WebSocket(
-                token ? `${url}?token=${token}` : url
+                token ? `${url}${separator}token=${encodeURIComponent(token)}` : url
             );
 
-            ws.onmessage = e => observer.next(JSON.parse(e.data));
+            ws.onopen = () => {
+                this.socket = ws;
+                this.flushPendingCommands();
+            };
+            ws.onmessage = e => {
+                try {
+                    observer.next(JSON.parse(e.data));
+                } catch {
+                    // Ignore malformed payloads instead of crashing runtime handling.
+                }
+            };
             ws.onerror = e => observer.error(e);
-            ws.onclose = () => observer.complete();
+            ws.onclose = () => {
+                if (this.socket === ws) this.socket = null;
+                observer.complete();
+            };
 
-            return () => ws.close(1000, 'unsubscribe');
+            return () => {
+                if (this.socket === ws) this.socket = null;
+                ws.close(1000, 'unsubscribe');
+            };
         });
     }
 
     connect() {
-        if (!isPlatformBrowser(inject(PLATFORM_ID))) return; // ✅ wichtig
-        this.connect_stream('/api/stream/ws3', this.auth.token())
+        if (!isPlatformBrowser(this.platformId)) return;
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
+
+        const token = this.auth.token();
+        if (!token) return;
+
+        this.connect_stream('/api/stream/ws3?manual_subscribe=1', token)
             .subscribe(event => this.handleEvent(event));
+    }
+
+    subscribeChannel(channelId: number) {
+        this.sendCommand({ action: 'subscribe', channel: channelId });
+    }
+
+    unsubscribeChannel(channelId: number) {
+        this.sendCommand({ action: 'unsubscribe', channel: channelId });
     }
 
     addUsernames(entries: { username: string; username_html: string }[]) {
@@ -53,7 +88,8 @@ export class StreamService {
     /* ───────────── Event Router ───────────── */
 
     private handleEvent(event: any) {
-        console.log(event)
+        if (!event || typeof event !== 'object') return;
+
         if ('error_code' in event) {
             this.handleError(event);
             return;
@@ -71,6 +107,26 @@ export class StreamService {
 
         if (event.cat === 'announcement') {
             this.pushMessage({ cat: 'announcement', message: event.msg });
+            return;
+        }
+
+        if (event.cat === 'channel_access_added') {
+            this.pushMessage({
+                cat: 'statusmsg',
+                channel: Number(event.channel ?? 1),
+                message: `Channel ${event.channel} available`,
+            });
+            this.channelChanged.update(v => v + 1);
+            return;
+        }
+
+        if (event.cat === 'channel_access_removed') {
+            this.pushMessage({
+                cat: 'statusmsg',
+                channel: Number(event.channel ?? 1),
+                message: `Channel ${event.channel} removed`,
+            });
+            this.channelChanged.update(v => v + 1);
             return;
         }
 
@@ -157,5 +213,22 @@ export class StreamService {
 
     private resolveUsername(username: string): string {
         return this.htmlUsers()[username] ?? username;
+    }
+
+    private sendCommand(command: { action: 'subscribe' | 'unsubscribe'; channel: number }) {
+        const payload = JSON.stringify(command);
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(payload);
+            return;
+        }
+        this.pendingCommands.push(payload);
+    }
+
+    private flushPendingCommands() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        for (const payload of this.pendingCommands) {
+            this.socket.send(payload);
+        }
+        this.pendingCommands = [];
     }
 }

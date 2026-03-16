@@ -93,6 +93,11 @@ async def pg_db_init():
         ''')
 
         await conn.execute('''
+            ALTER TABLE channels
+            ADD COLUMN IF NOT EXISTS invite_only BOOL DEFAULT false
+        ''')
+
+        await conn.execute('''
             ALTER TABLE users
             ADD COLUMN IF NOT EXISTS channel_id INT DEFAULT 1
         ''')
@@ -110,6 +115,12 @@ async def pg_db_init():
         await conn.execute('''
             INSERT INTO channels (id,name,always_available) VALUES (1,'Main Channel',true)
             ON CONFLICT (name) DO NOTHING;
+        ''')
+
+        await conn.execute('''
+            UPDATE channels
+            SET always_available = true, invite_only = false
+            WHERE id = 1
         ''')
 
         await conn.execute('''
@@ -137,6 +148,16 @@ async def pg_db_init():
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
 
+                PRIMARY KEY (user_id, channel_id)
+            );
+        ''')
+
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS channel_invites (
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
+                invited_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created TIMESTAMP DEFAULT NOW(),
                 PRIMARY KEY (user_id, channel_id)
             );
         ''')

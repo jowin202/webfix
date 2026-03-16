@@ -9,6 +9,12 @@ export interface Message {
 export interface Channel {
   id: number;
   name: string;
+  always_available?: boolean;
+  invite_only?: boolean;
+  has_password?: boolean;
+  is_owner?: boolean;
+  is_member?: boolean;
+  is_invited?: boolean;
 }
 
 

@@ -79,10 +79,22 @@ async def get_users_by_channel_id(id : int):
 
 
 @router.get("/channels/")
-async def get_channels():
+async def get_channels(request: Request):
     conn = await get_pg_connection() 
-    query = "SELECT id,name FROM channels"
-    result = await conn.fetch(query)
+    query = """
+        SELECT c.id, c.name
+        FROM channels c
+        WHERE c.always_available = true
+           OR c.id = 1
+           OR EXISTS (
+                SELECT 1
+                FROM channel_members cm
+                WHERE cm.channel_id = c.id
+                AND cm.user_id = $1
+           )
+        ORDER BY c.id
+    """
+    result = await conn.fetch(query, request.state.user_id)
     await release_pg_connection(conn)
     return result
 

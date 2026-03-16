@@ -9,84 +9,84 @@ from settings import SettingsManager
 router = APIRouter()
 
 
-
-# Database config
 DB_CONFIG = {
     "user": os.getenv('POSTGRES_USER'),
     "password": os.getenv('POSTGRES_PASSWORD'),
     "database": os.getenv('POSTGRES_DB'),
     "host": os.getenv('POSTGRES_HOST', 'localhost'),
-    "port": os.getenv('POSTGRES_PORT', 5432) 
+    "port": os.getenv('POSTGRES_PORT', 5432)
 }
-
-
-
-
 
 
 @router.websocket("/ws3")
 async def websocket_endpoint_multi_channel(websocket: WebSocket):
     token = websocket.query_params.get("token")
+    manual_subscribe = websocket.query_params.get("manual_subscribe", "0").lower() in ("1", "true", "yes")
+    auto_subscribe = not manual_subscribe
 
     valid = False
     message = ""
     username = ""
-    id = -1
+    user_id = -1
     channel_ids = []
     is_guest = False
     conn = None
     try:
-        conn = await get_pg_connection()
-
-        # basic infos
-        query = '''
-            SELECT id, username, remove_on_logout
-            FROM users 
-            WHERE token = $1 
-        '''
-        result = await conn.fetchrow(query, token) 
-        if result:
-            valid = True
-            username = result['username']
-            id = int(result['id'])
-            is_guest = True if result['remove_on_logout'] else False
-        else:
+        if token is None or token.strip() == "":
             message = "Unknown token"
-        
+        else:
+            conn = await get_pg_connection()
 
-        # public channels
-        query = '''
+            result = await conn.fetchrow(
+                """
+                SELECT id, username, remove_on_logout
+                FROM users
+                WHERE token = $1
+                AND token <> ''
+                """,
+                token,
+            )
+            if result:
+                valid = True
+                username = result['username']
+                user_id = int(result['id'])
+                is_guest = bool(result['remove_on_logout'])
+            else:
+                message = "Unknown token"
+
+            result = await conn.fetch(
+                """
                 SELECT id
-                FROM channels 
-                WHERE always_available = true 
-            UNION
-                SELECT channel_id
+                FROM channels
+                WHERE always_available = true
+                UNION
+                SELECT channel_id AS id
                 FROM channel_members
                 WHERE user_id = $1
-        '''
-        result = await conn.fetch(query, id)
-        if result:
-            channel_ids = [int(row['id']) for row in result]
+                """,
+                user_id,
+            )
+            if result:
+                channel_ids = [int(row['id']) for row in result]
 
+            x_forwarded_for = websocket.headers.get("x-forwarded-for")
+            client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else websocket.client.host
+            ip_blocked = await conn.fetchval("SELECT 1 FROM banned_ips WHERE ip = $1", client_ip)
+            if ip_blocked:
+                valid = False
+                message = "IP blocked"
 
-
-        x_forwarded_for = websocket.headers.get("x-forwarded-for")
-        client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else websocket.client.host
-        ip_check_query = "SELECT 1 FROM banned_ips WHERE ip = $1"
-        ip_blocked = await conn.fetchval(ip_check_query, client_ip)
-
-        if ip_blocked:
-            valid = False
-            message = "IP blocked"
-
-
-        if valid:
-            await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{id}", json.dumps({'cat': 'statusmsg', 'msg': 'double login detected'}))
-            await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{id}", "exit")
+            if valid:
+                await conn.execute(
+                    "SELECT pg_notify($1, $2)",
+                    f"whisper_{user_id}",
+                    json.dumps({'cat': 'statusmsg', 'msg': 'double login detected'}),
+                )
+                await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{user_id}", "exit")
     except Exception as e:
         print("exception: " + str(e), flush=True)
         await websocket.close()
-        return # quit here
+        return
     finally:
         if conn is not None:
             await release_pg_connection(conn)
@@ -100,21 +100,47 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
 
     listen_conn = await asyncpg.connect(**DB_CONFIG)
 
-    async def add_channel(channel_id):
+    async def can_access_channel(channel_id: int) -> bool:
+        access_conn = await get_pg_connection()
+        try:
+            return bool(
+                await access_conn.fetchval(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM channels c
+                        WHERE c.id = $1
+                        AND (
+                            c.always_available = true
+                            OR EXISTS (
+                                SELECT 1
+                                FROM channel_members cm
+                                WHERE cm.user_id = $2
+                                AND cm.channel_id = c.id
+                            )
+                        )
+                    )
+                    """,
+                    channel_id,
+                    user_id,
+                )
+            )
+        finally:
+            await release_pg_connection(access_conn)
+
+    async def add_channel(channel_id: int):
         nonlocal current_channel_listeners
         if channel_id in current_channel_listeners:
             return
 
         payload = json.dumps({"cat": "userenters", "username": username, "channel": channel_id})
-
         listener = create_listener(websocket, add_channel, remove_channel)
         current_channel_listeners[channel_id] = listener
 
         await listen_conn.add_listener("channel_" + str(channel_id), listener)
         await listen_conn.execute("SELECT pg_notify($1, $2)", "channel_" + str(channel_id), payload)
 
-
-    async def remove_channel(channel_id):
+    async def remove_channel(channel_id: int):
         nonlocal current_channel_listeners
         listener = current_channel_listeners.get(channel_id)
         if listener is None:
@@ -125,21 +151,20 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
         await listen_conn.remove_listener("channel_" + str(channel_id), listener)
         del current_channel_listeners[channel_id]
 
-
     def create_listener(websocket, add_channel_callback, remove_channel_callback):
         async def listener(*args):
-            await notify_ws(args, websocket, add_channel_callback, remove_channel_callback)
+            await notify_ws(args, websocket, add_channel_callback, remove_channel_callback, auto_subscribe)
         return listener
 
     current_channel_listeners = {}
     global_listener = create_listener(websocket, add_channel, remove_channel)
     whisper_listener = create_listener(websocket, add_channel, remove_channel)
 
-
     await listen_conn.add_listener("global", global_listener)
-    for channel_id in channel_ids:
-        await add_channel(channel_id)
-    await listen_conn.add_listener("whisper_" + str(id), whisper_listener)
+    if auto_subscribe:
+        for channel_id in channel_ids:
+            await add_channel(channel_id)
+    await listen_conn.add_listener("whisper_" + str(user_id), whisper_listener)
 
     try:
         manager = SettingsManager()
@@ -154,10 +179,38 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
             await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement_guests}))
         elif announcement_registered:
             await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement_registered}))
-            
+
         while True:
-            # Wait for any message or ping to keep the connection alive
-            await websocket.receive_text()
+            raw_msg = await websocket.receive_text()
+            if not manual_subscribe:
+                continue
+
+            try:
+                cmd = json.loads(raw_msg)
+            except Exception:
+                continue
+
+            if not isinstance(cmd, dict):
+                continue
+
+            action = cmd.get("action")
+            try:
+                channel_id = int(cmd.get("channel"))
+            except Exception:
+                continue
+
+            if action == "subscribe":
+                if await can_access_channel(channel_id):
+                    await add_channel(channel_id)
+                else:
+                    await websocket.send_text(json.dumps({
+                        "cat": "statusmsg",
+                        "channel": channel_id,
+                        "msg": "No access to that channel."
+                    }))
+            elif action == "unsubscribe":
+                await remove_channel(channel_id)
+
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -173,33 +226,50 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
         except Exception:
             pass
         try:
-            await listen_conn.remove_listener("whisper_" + str(id), whisper_listener)
+            await listen_conn.remove_listener("whisper_" + str(user_id), whisper_listener)
         except Exception:
             pass
         await listen_conn.close()
 
 
+async def notify_ws(args, websocket: WebSocket, add_channel_callback, remove_channel_callback, auto_subscribe: bool):
+    _, _, _, payload = args
 
-async def notify_ws(args, websocket: WebSocket, add_channel_callback, remove_channel_callback):
-    _, pid, channel, payload = args
     if payload == 'exit':
         try:
             await websocket.send_text('{"cat": "statusmsg", "msg": "stream closed"}')
-        except:
+        except Exception:
             pass
         await websocket.close()
-    elif payload.startswith("add "):
+        return
+
+    if payload.startswith("add "):
         try:
-            await add_channel_callback(int(payload.split()[1]))
+            channel_id = int(payload.split()[1])
+            if auto_subscribe:
+                await add_channel_callback(channel_id)
+            else:
+                await websocket.send_text(json.dumps({
+                    "cat": "channel_access_added",
+                    "channel": channel_id
+                }))
         except Exception:
             pass
-    elif payload.startswith("remove "):
+        return
+
+    if payload.startswith("remove "):
         try:
-            await remove_channel_callback(int(payload.split()[1]))
+            channel_id = int(payload.split()[1])
+            await remove_channel_callback(channel_id)
+            await websocket.send_text(json.dumps({
+                "cat": "channel_access_removed",
+                "channel": channel_id
+            }))
         except Exception:
             pass
-    else:
-        try:
-            await websocket.send_text(payload)
-        except Exception:
-            pass
+        return
+
+    try:
+        await websocket.send_text(payload)
+    except Exception:
+        pass

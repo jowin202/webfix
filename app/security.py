@@ -9,6 +9,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login/")
 
 async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
+    if token is None or token.strip() == "":
+        raise HTTPException(status_code=401, detail="Invalid token")
+
     conn = await get_pg_connection()
 
     x_forwarded_for = request.headers.get("x-forwarded-for")
@@ -28,7 +31,8 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
             ELSE EXTRACT(EPOCH FROM (kicked_until - NOW()))
             END AS kicked_seconds
         FROM users 
-        WHERE token = $1 
+        WHERE token = $1
+        AND token <> ''
     '''
     result = await conn.fetchrow(query, token)
     await release_pg_connection(conn)
@@ -53,11 +57,16 @@ async def verify_token(request: Request, token: str = Depends(oauth2_scheme)):
 
 
 async def verify_token_admin(request: Request, token: str = Depends(oauth2_scheme)):
+    if token is None or token.strip() == "":
+        raise HTTPException(status_code=401, detail="Invalid token")
+
     conn = await get_pg_connection()
     query = '''
         SELECT id, admin 
         FROM users 
-        WHERE token = $1 AND admin > 2
+        WHERE token = $1
+        AND token <> ''
+        AND admin > 2
     '''
     result = await conn.fetchrow(query, token)
     await release_pg_connection(conn)
