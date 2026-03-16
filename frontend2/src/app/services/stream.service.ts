@@ -102,6 +102,9 @@ export class StreamService {
 
         if (event.cat === 'statusmsg') {
             this.pushMessage({ cat: 'statusmsg', message: event.msg });
+            if (event.reload_channels === true) {
+                this.channelChanged.update(v => v + 1);
+            }
             return;
         }
 

@@ -5,13 +5,15 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSelectModule } from '@angular/material/select';
 
 
-import { Component, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { WebAuthnService } from '../../services/webauthn.service';
+import { Channel, User } from '../../models';
 
 @Component({
   selector: 'app-user-menu',
@@ -23,7 +25,8 @@ import { WebAuthnService } from '../../services/webauthn.service';
     MatCardModule,
     MatTableModule,
     MatIconModule,
-    MatDividerModule],
+    MatDividerModule,
+    MatSelectModule],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss',
 })
@@ -38,6 +41,18 @@ export class UserMenu {
 
   
   closeEvent = output<void>();
+  channels = input<Channel[]>([]);
+  users = input<User[]>([]);
+
+  inviteChannelId: number | null = null;
+  inviteUsername = '';
+  inviteSuccess = signal(false);
+  inviteError = signal('');
+
+  ownedChannels = computed(() => this.channels().filter(channel => !!channel.is_owner));
+  invitableUsers = computed(() =>
+    this.users().filter(user => user.username.toLowerCase() !== this.auth.username().toLowerCase())
+  );
 
 
 
@@ -186,5 +201,33 @@ export class UserMenu {
     this.double_register_error.set(false);
     this.no_challenge_error.set(false);
     this.wrong_password_error.set(false);
+  }
+
+  invite_to_channel() {
+    this.inviteSuccess.set(false);
+    this.inviteError.set('');
+
+    const channelId = Number(this.inviteChannelId);
+    const username = this.inviteUsername.trim();
+    if (!channelId || !username) {
+      this.inviteError.set('Bitte Channel und User auswählen.');
+      return;
+    }
+
+    this.api.post('/api/channels/invite/', this.auth.token(), { channel_id: channelId, username })
+      .subscribe(result => {
+        if (this.hasApiError(result)) {
+          this.inviteError.set('Einladung fehlgeschlagen.');
+          return;
+        }
+        this.inviteSuccess.set(true);
+      });
+  }
+
+  private hasApiError(result: any): boolean {
+    if (!result) return true;
+    if (Array.isArray(result) && result.length > 0 && result[0] && typeof result[0] === 'object' && 'error_code' in result[0]) return true;
+    if (typeof result !== 'object') return true;
+    return 'error_code' in result;
   }
 }

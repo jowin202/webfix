@@ -62,13 +62,10 @@ export class ChatSidebar {
   setActiveTab = output<'channels' | 'users'>();
   addChatter = output<void>();
   createChannel = output<{ name: string; password?: string; invite_only: boolean }>();
-  inviteUser = output<{ channel_id: number; username: string }>();
 
   newChannelName = '';
   newChannelPassword = '';
   newChannelInviteOnly = false;
-  inviteChannelId: number | null = null;
-  inviteUsername = '';
 
   // --- METHODEN FÜR DIE SUCHE ---
 
@@ -97,13 +94,5 @@ export class ChatSidebar {
     this.newChannelName = '';
     this.newChannelPassword = '';
     this.newChannelInviteOnly = false;
-  }
-
-  onInviteUser() {
-    const username = this.inviteUsername.trim();
-    const channel_id = Number(this.inviteChannelId);
-    if (!username || !channel_id) return;
-    this.inviteUser.emit({ channel_id, username });
-    this.inviteUsername = '';
   }
 }

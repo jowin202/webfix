@@ -386,11 +386,6 @@ export class ChatWindow {
       });
   }
 
-  inviteUser(data: { channel_id: number; username: string }) {
-    this.api.post('/api/channels/invite/', this.auth.token(), data)
-      .subscribe(_ => this.get_channels());
-  }
-
   openPrivateChat(user: User): void {
     const privateThread: ChatThread = {
       id: this.privateThreadId(user.username),
@@ -408,7 +403,14 @@ export class ChatWindow {
 
     if (data.thread.type === 'channel') {
       const channelId = this.getChannelIdFromThreadId(data.thread.id);
-      if (channelId) this.unsubscribeFromChannel(channelId);
+      if (channelId) {
+        const channel = this.channels().find(c => c.id === channelId);
+        if (channel && !channel.always_available) {
+          this.api.post(`/api/channels/remove_channel/${channelId}/`, this.auth.token(), null)
+            .subscribe(_ => this.get_channels());
+        }
+        this.unsubscribeFromChannel(channelId);
+      }
     }
 
     if (this.currentThread()?.id === data.thread.id) {

@@ -79,6 +79,45 @@
 </mat-card>
 
 
+<mat-card>
+    <mat-card-title>Invite to Channel</mat-card-title>
+    <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+            <mat-label>Channel</mat-label>
+            <mat-select [(ngModel)]="inviteChannelId" name="inviteChannelId">
+                @for (channel of ownedChannels(); track channel.id) {
+                <mat-option [value]="channel.id">{{ channel.name }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>User</mat-label>
+            <mat-select [(ngModel)]="inviteUsername" name="inviteUsername">
+                @for (user of invitableUsers(); track user.id) {
+                <mat-option [value]="user.username">{{ user.username }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+        <button mat-raised-button color="primary" type="button" (click)="invite_to_channel()">
+            Invite
+        </button>
+    </mat-card-actions>
+
+    <mat-card-content>
+        @if (inviteError()) {
+        <p class="error">{{ inviteError() }}</p>
+        }
+        @if (inviteSuccess()) {
+        <p class="success">Einladung gesendet.</p>
+        }
+    </mat-card-content>
+</mat-card>
+
+
 
 
 <mat-card>

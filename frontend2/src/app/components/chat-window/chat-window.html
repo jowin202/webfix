@@ -11,7 +11,6 @@
         (openPrivateChat)="openPrivateChat($event)"
         (setActiveTab)="setActiveTab($event)"
         (createChannel)="createChannel($event)"
-        (inviteUser)="inviteUser($event)"
     ></app-chat-sidebar>
     
   </mat-sidenav>
@@ -47,6 +46,10 @@
   </mat-sidenav-content>
 
     <mat-sidenav #rightSidenav mode="over" position="end" class="settings-sidebar">
-      <app-user-menu (closeEvent)="this.openSettings()"></app-user-menu>
+      <app-user-menu
+        [channels]="channels()"
+        [users]="users()"
+        (closeEvent)="this.openSettings()"
+      ></app-user-menu>
     </mat-sidenav>
 </mat-sidenav-container>

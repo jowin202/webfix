@@ -66,3 +66,11 @@ mat-divider {
   width: calc(100% - 20px); 
   flex-shrink: 0; /* Bleibt fixiert unten */
 }
+
+.create-channel-btn {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 44px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}

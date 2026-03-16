@@ -1,4 +1,5 @@
-from typing import Optional
+import json
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -6,6 +7,9 @@ from pydantic import BaseModel
 from db import get_pg_connection, release_pg_connection
 
 router = APIRouter()
+
+NotifyScope = Literal["private", "channel", "global"]
+STATUS_SENDER = "ChatBot"
 
 
 class CreateChannelRequest(BaseModel):
@@ -25,6 +29,49 @@ class InviteChannelRequest(BaseModel):
 
 async def _notify_channel_access(conn, user_id: int, action: str, channel_id: int):
     await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{user_id}", f"{action} {channel_id}")
+
+
+async def _notify_status_message(
+    conn,
+    message: str,
+    scope: NotifyScope,
+    channel_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    reload_channels: bool = False,
+):
+    payload = {"cat": "statusmsg", "username": STATUS_SENDER, "msg": message}
+    if channel_id is not None:
+        payload["channel"] = channel_id
+    if reload_channels:
+        payload["reload_channels"] = True
+
+    if scope == "private":
+        if user_id is None:
+            return
+        target = f"whisper_{user_id}"
+    elif scope == "channel":
+        if channel_id is None:
+            return
+        target = f"channel_{channel_id}"
+    else:
+        target = "global"
+
+    await conn.execute("SELECT pg_notify($1, $2)", target, json.dumps(payload))
+
+
+async def _delete_channel_if_empty(conn, channel_id: int):
+    return await conn.fetchval(
+        """
+        DELETE FROM channels c
+        WHERE c.id = $1
+          AND COALESCE(c.always_available, false) = false
+          AND NOT EXISTS (
+              SELECT 1 FROM channel_members cm WHERE cm.channel_id = c.id
+          )
+        RETURNING c.id
+        """,
+        channel_id,
+    )
 
 
 async def _channel_with_access_flags(conn, channel_id: int, user_id: int):
@@ -57,6 +104,11 @@ async def _channel_with_access_flags(conn, channel_id: int, user_id: int):
     )
 
 
+async def _username_by_id(conn, user_id: int) -> str:
+    username = await conn.fetchval("SELECT username FROM users WHERE id = $1", user_id)
+    return username or f"User {user_id}"
+
+
 @router.get("/list/")
 async def list_channels(request: Request):
     conn = await get_pg_connection()
@@ -70,11 +122,14 @@ async def list_channels(request: Request):
                 COALESCE(c.invite_only, false) AS invite_only,
                 (COALESCE(c.password, '') <> '') AS has_password,
                 (c.owner = $1) AS is_owner,
-                EXISTS (
-                    SELECT 1
-                    FROM channel_members cm
-                    WHERE cm.channel_id = c.id
-                    AND cm.user_id = $1
+                (
+                    c.always_available = true
+                    OR EXISTS (
+                        SELECT 1
+                        FROM channel_members cm
+                        WHERE cm.channel_id = c.id
+                        AND cm.user_id = $1
+                    )
                 ) AS is_member,
                 EXISTS (
                     SELECT 1
@@ -154,6 +209,13 @@ async def create_channel(
         )
 
         await _notify_channel_access(conn, request.state.user_id, "add", channel_id)
+        actor = await _username_by_id(conn, request.state.user_id)
+        await _notify_status_message(
+            conn,
+            f'{actor} created channel "{normalized_name}".',
+            "global",
+            reload_channels=True,
+        )
         return {"result": True, "channel_id": channel_id}
     finally:
         await release_pg_connection(conn)
@@ -204,6 +266,13 @@ async def join_channel(
         )
 
         await _notify_channel_access(conn, request.state.user_id, "add", channel_id)
+        actor = await _username_by_id(conn, request.state.user_id)
+        await _notify_status_message(
+            conn,
+            f'{actor} joined channel "{channel["name"]}".',
+            "global",
+            reload_channels=True,
+        )
         return {"result": True, "channel_id": channel_id}
     finally:
         await release_pg_connection(conn)
@@ -211,21 +280,21 @@ async def join_channel(
 
 @router.post("/add_channel/{channel_id}/")
 async def add_channel_by_id(channel_id: int, request: Request):
-    return await join_channel(channel_id, JoinChannelRequest(), request)
+    return await join_channel(channel_id, request, JoinChannelRequest())
 
 
 @router.post("/remove_channel/{channel_id}/")
 async def remove_channel_by_id(channel_id: int, request: Request):
     conn = await get_pg_connection()
     try:
-        owner_id = await conn.fetchval("SELECT owner FROM channels WHERE id = $1", channel_id)
-        if owner_id is None:
+        channel = await conn.fetchrow(
+            "SELECT id, name, owner, always_available FROM channels WHERE id = $1",
+            channel_id,
+        )
+        if channel is None:
             raise HTTPException(status_code=404, detail="Channel not found.")
 
-        if owner_id == request.state.user_id:
-            raise HTTPException(status_code=400, detail="Owner cannot leave own channel.")
-
-        await conn.execute(
+        delete_result = await conn.execute(
             """
             DELETE FROM channel_members
             WHERE user_id = $1
@@ -235,8 +304,26 @@ async def remove_channel_by_id(channel_id: int, request: Request):
             channel_id,
         )
 
+        deleted_channel_id = await _delete_channel_if_empty(conn, channel_id)
         await _notify_channel_access(conn, request.state.user_id, "remove", channel_id)
-        return {"result": True}
+
+        actor = await _username_by_id(conn, request.state.user_id)
+        if delete_result.endswith("1"):
+            await _notify_status_message(
+                conn,
+                f'{actor} left channel "{channel["name"]}".',
+                "global",
+                reload_channels=True,
+            )
+        if deleted_channel_id:
+            await _notify_status_message(
+                conn,
+                f'Channel "{channel["name"]}" was deleted (no members left).',
+                "global",
+                reload_channels=True,
+            )
+
+        return {"result": True, "channel_deleted": bool(deleted_channel_id)}
     finally:
         await release_pg_connection(conn)
 
@@ -259,7 +346,7 @@ async def invite_to_channel(
             raise HTTPException(status_code=400, detail="Username is required.")
 
         channel = await conn.fetchrow(
-            "SELECT id, owner, always_available FROM channels WHERE id = $1",
+            "SELECT id, name, owner, always_available FROM channels WHERE id = $1",
             payload_channel_id,
         )
         if not channel:
@@ -291,6 +378,13 @@ async def invite_to_channel(
 
         # Trigger client refresh for the invited user.
         await _notify_channel_access(conn, target_user_id, "add", payload_channel_id)
+        await _notify_status_message(
+            conn,
+            f'You were invited to channel "{channel["name"]}".',
+            "private",
+            user_id=target_user_id,
+            reload_channels=True,
+        )
         return {"result": True}
     finally:
         await release_pg_connection(conn)
