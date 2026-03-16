@@ -1,7 +1,7 @@
 import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { Observable, timestamp } from 'rxjs';
+import { Observable } from 'rxjs';
 import { PrivateMessage, PrivateMessagesByUser, PublicMessage } from './models';
 
 import { isPlatformBrowser } from '@angular/common';
@@ -90,6 +90,7 @@ export class StreamService {
                 cat: 'default',
                 username: this.resolveUsername(event.username),
                 message: event.message,
+                channel: Number(event.channel ?? 1),
             });
         }
     }
@@ -109,7 +110,7 @@ export class StreamService {
         const msg: PrivateMessage = {
             from: event.username,
             message: event.msg,
-            timestamp: new Date().getUTCSeconds()
+            timestamp: Date.now(),
         };
 
         this.privateMessages.update(map => ({
@@ -132,6 +133,7 @@ export class StreamService {
                 event.cat === 'userleft'
                     ? `${name} left the channel`
                     : `${name} joined the channel`,
+            channel: Number(event.channel ?? 1),
         });
 
         this.userChanged.update(v => v + 1);

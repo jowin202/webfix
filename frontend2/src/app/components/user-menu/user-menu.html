@@ -55,10 +55,10 @@
 
             <!-- Feedback -->
             <div class="form-messages">
-                @if (error_at_html_user) {
+                @if (error_at_html_user()) {
                 <p class="error">Username must match HTML username</p>
                 }
-                @if (change_pw) {
+                @if (change_pw_status()) {
                 <p class="success">Password changed successfully</p>
                 }
             </div>
@@ -98,10 +98,9 @@
                 <input matInput name="col2" ngModel>
             </mat-form-field>
 
-            @if (color_gradient_error === true) {
+            @if (color_gradient_error() === true) {
             <p class="error">Error changing gradient</p>
-            }
-            @if (color_gradient_error === false) {
+            } @else if (color_gradient_error() === false) {
             <p class="success">Gradient updated</p>
             }
 
@@ -117,11 +116,11 @@
 </mat-card>
 
 
-@if (fido_credentials.length > 0) {
+@if (fido_credentials().length > 0) {
 <mat-card>
     <mat-card-title>Existing FIDO2 Credentials</mat-card-title>
 
-    <table mat-table [dataSource]="fido_credentials">
+    <table mat-table [dataSource]="fido_credentials()">
 
         <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
@@ -172,16 +171,16 @@
                 <input matInput #fidoname>
             </mat-form-field>
 
-            @if (no_challenge_error) {
+            @if (no_challenge_error()) {
             <p class="error">Timeout while registering token</p>
             }
-            @if (double_register_error) {
+            @if (double_register_error()) {
             <p class="error">Credential already exists</p>
             }
-            @if (wrong_password_error) {
+            @if (wrong_password_error()) {
             <p class="error">Wrong password</p>
             }
-            @if (fido_successfull) {
+            @if (fido_status_successfull()) {
             <p class="success">Credential created successfully</p>
             }
 
@@ -194,4 +193,29 @@
         </mat-card-actions>
 
     </form>
+</mat-card>
+
+
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Account Metadata</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="meta-grid">
+    <div><strong>ID:</strong> {{ userinfo.id ?? -1 }}</div>
+    <div><strong>Username:</strong> {{ userinfo.username ?? '' }}</div>
+    <div>
+      <strong>Username (HTML):</strong>
+      <span [innerHTML]="userinfo.username_html"></span>
+    </div>
+    <div><strong>Online Time:</strong> {{ formatSeconds(userinfo.online_time) }}</div>
+    <div><strong>Created:</strong> {{ formatTime(userinfo.created) }}</div>
+    <div><strong>Last Posted:</strong> {{ formatTime(userinfo.last_posted) }}</div>
+    <div><strong>Last Login:</strong> {{ formatTime(userinfo.last_login) }}</div>
+    <div><strong>Login Count:</strong> {{ userinfo.login_count ?? 0 }}</div>
+    <div>
+      <strong>Registered:</strong>
+      {{ userinfo.remove_on_logout ? 'no' : 'yes' }}
+    </div>
+  </mat-card-content>
 </mat-card>

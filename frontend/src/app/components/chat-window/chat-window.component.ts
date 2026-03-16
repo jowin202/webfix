@@ -48,6 +48,9 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   showAdminMenu: Boolean = false;
 
   ngOnInit() {
+    if (!this.auth.channel_id || this.auth.channel_id < 1) {
+      this.auth.channel_id = 1;
+    }
     this.stream.connect_websocket();
     this.update_online_list();
     this.update_channel_list();
@@ -56,7 +59,8 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
 
 
   update_online_list() {
-    this.api.get("/api/data/online/", this.auth.token)
+    const channelId = Number(this.auth.channel_id || 1);
+    this.api.get("/api/data/users_by_channel_id/" + channelId + "/", this.auth.token)
       .subscribe(result => {
         if (!("error_code" in result)) {
           this.onlineUsers = result
@@ -76,10 +80,9 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
       });
   }
   switchChannel(data: any) {
-    this.api.post("/api/input/goto/" + data + "/", this.auth.token, {})
-      .subscribe(result => {
-        //do nothing, update user list is in constructor (stream service)
-      });
+    this.auth.channel_id = Number(data || 1);
+    this.stream.messages = [];
+    this.update_online_list();
   }
 
 
@@ -96,7 +99,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.api.post(`/api/input/`, this.auth.token, { "message": message })
+    this.api.post(`/api/input/`, this.auth.token, { "message": message, "channel_id": this.auth.channel_id })
       .subscribe(result => {
         //console.log('Server response:', result);
       });

@@ -1,6 +1,4 @@
-from typing import Annotated
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException,APIRouter, Depends, Request
-from helper import token_generate, send_mail, send_fediverse, calc_hmac
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter
 from db import get_pg_connection, release_pg_connection
 import os
 import json
@@ -26,7 +24,6 @@ DB_CONFIG = {
 
 
 
-# new
 @router.websocket("/ws3")
 async def websocket_endpoint_multi_channel(websocket: WebSocket):
     token = websocket.query_params.get("token")
@@ -37,9 +34,10 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
     id = -1
     channel_ids = []
     is_guest = False
+    conn = None
     try:
         conn = await get_pg_connection()
-        
+
         # basic infos
         query = '''
             SELECT id, username, remove_on_logout
@@ -66,10 +64,9 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
                 FROM channel_members
                 WHERE user_id = $1
         '''
-        result = await conn.fetch(query, id) 
+        result = await conn.fetch(query, id)
         if result:
-            channel_ids = [row['id'] for row in result]
-            print(channel_ids, flush=True)
+            channel_ids = [int(row['id']) for row in result]
 
 
 
@@ -84,71 +81,71 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
 
 
         if valid:
-            await conn.execute(f"NOTIFY whisper_{id}, '{json.dumps({'cat': 'statusmsg', 'msg': 'double login detected'})}'")
-            await conn.execute(f"NOTIFY whisper_{id}, 'exit'")
+            await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{id}", json.dumps({'cat': 'statusmsg', 'msg': 'double login detected'}))
+            await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{id}", "exit")
     except Exception as e:
         print("exception: " + str(e), flush=True)
-        await websocket.close() # this only happen if error
+        await websocket.close()
         return # quit here
     finally:
-        if (conn):
+        if conn is not None:
             await release_pg_connection(conn)
 
     await websocket.accept()
-    #await websocket.send_text(f'{{"cat": "statusmsg", "msg": "stream opened for {username}, id: {id}"}}')
 
     if not valid:
         await websocket.send_text(f'{{"cat": "statusmsg", "msg": "{message}"}}')
         await websocket.close()
         return
 
+    listen_conn = await asyncpg.connect(**DB_CONFIG)
 
     async def add_channel(channel_id):
-        nonlocal websocket, current_channel_listeners
-        
+        nonlocal current_channel_listeners
+        if channel_id in current_channel_listeners:
+            return
+
         payload = json.dumps({"cat": "userenters", "username": username, "channel": channel_id})
 
-        listener = create_listener(websocket,add_channel,remove_channel)
+        listener = create_listener(websocket, add_channel, remove_channel)
         current_channel_listeners[channel_id] = listener
 
-        await conn.add_listener("channel_" + str(channel_id), listener)
-        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload}'")
+        await listen_conn.add_listener("channel_" + str(channel_id), listener)
+        await listen_conn.execute("SELECT pg_notify($1, $2)", "channel_" + str(channel_id), payload)
 
 
-    
     async def remove_channel(channel_id):
-        nonlocal websocket, current_channel_listeners
-        
-        payload = json.dumps({"cat": "userleft", "username": username})
-        listener = current_channel_listeners[channel_id] 
+        nonlocal current_channel_listeners
+        listener = current_channel_listeners.get(channel_id)
+        if listener is None:
+            return
 
-        await conn.execute(f"NOTIFY channel_{str(channel_id)}, '{payload}'")
-        await conn.remove_listener_listener("channel_" + str(channel_id), listener)
-        del current_channel_listeners[channel_id] 
-    
+        payload = json.dumps({"cat": "userleft", "username": username, "channel": channel_id})
+        await listen_conn.execute("SELECT pg_notify($1, $2)", "channel_" + str(channel_id), payload)
+        await listen_conn.remove_listener("channel_" + str(channel_id), listener)
+        del current_channel_listeners[channel_id]
 
 
     def create_listener(websocket, add_channel_callback, remove_channel_callback):
         async def listener(*args):
-            await notify_ws(args, websocket,add_channel_callback, remove_channel_callback)
+            await notify_ws(args, websocket, add_channel_callback, remove_channel_callback)
         return listener
 
-    current_channel_listeners: dict[int, ChannelListener] = {}
-    global_listener = create_listener(websocket,add_channel,remove_channel)
-    whisper_listener = create_listener(websocket,add_channel,remove_channel)
+    current_channel_listeners = {}
+    global_listener = create_listener(websocket, add_channel, remove_channel)
+    whisper_listener = create_listener(websocket, add_channel, remove_channel)
 
 
-    conn = await asyncpg.connect(**DB_CONFIG)
-    await conn.add_listener("global", global_listener)
+    await listen_conn.add_listener("global", global_listener)
     for channel_id in channel_ids:
         await add_channel(channel_id)
-    await conn.add_listener("whisper_" + str(id), whisper_listener)
+    await listen_conn.add_listener("whisper_" + str(id), whisper_listener)
 
     try:
         manager = SettingsManager()
-        announcement =  manager.get_setting("announcement_general").replace("$USER", username)
-        announcement_guests =  manager.get_setting("announcement_guests").replace("$USER", username)
-        announcement_registered =  manager.get_setting("announcement_registered_users").replace("$USER", username)
+        announcement = (manager.get_setting("announcement_general") or "").replace("$USER", username)
+        announcement_guests = (manager.get_setting("announcement_guests") or "").replace("$USER", username)
+        announcement_registered = (manager.get_setting("announcement_registered_users") or "").replace("$USER", username)
 
         if announcement:
             await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement}))
@@ -162,14 +159,24 @@ async def websocket_endpoint_multi_channel(websocket: WebSocket):
             # Wait for any message or ping to keep the connection alive
             await websocket.receive_text()
     except WebSocketDisconnect:
-        print("WebSocket disconnected")
+        pass
     except Exception as e:
         print("WebSocket error:", e)
     finally:
-        print("Cleaning up...",flush=True)
-        await conn.remove_listener("global", global_listener)
-        await conn.remove_listener("whisper_" + str(id), whisper_listener)
-        await conn.close()
+        for channel_id in list(current_channel_listeners.keys()):
+            try:
+                await remove_channel(channel_id)
+            except Exception:
+                pass
+        try:
+            await listen_conn.remove_listener("global", global_listener)
+        except Exception:
+            pass
+        try:
+            await listen_conn.remove_listener("whisper_" + str(id), whisper_listener)
+        except Exception:
+            pass
+        await listen_conn.close()
 
 
 
@@ -181,10 +188,18 @@ async def notify_ws(args, websocket: WebSocket, add_channel_callback, remove_cha
         except:
             pass
         await websocket.close()
-    elif payload.startswith("add"):
-        await add_channel_callback(int(payload.split()[1]))
-    elif payload.startswith("remove"):
-        await remove_channel_callback(int(payload.split()[1]))
+    elif payload.startswith("add "):
+        try:
+            await add_channel_callback(int(payload.split()[1]))
+        except Exception:
+            pass
+    elif payload.startswith("remove "):
+        try:
+            await remove_channel_callback(int(payload.split()[1]))
+        except Exception:
+            pass
     else:
-        await websocket.send_text(payload)
-
+        try:
+            await websocket.send_text(payload)
+        except Exception:
+            pass

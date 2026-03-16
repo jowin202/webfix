@@ -14,6 +14,7 @@ export interface PublicMessage {
   cat: PublicMessageCategory;
   message: string;
   username?: string;   // optional, z. B. statusmsg
+  channel?: number;
   timestamp?: number;  // besser number statt Date (serialisierbar)
 }
 
@@ -28,4 +29,3 @@ export type PrivateMessagesByUser = Record<
   string,            // username
   readonly PrivateMessage[]
 >;
-

@@ -58,6 +58,7 @@ export class AuthService {
         this.token.set(response["access_token"]);
         this.username.set(username);
         this.admin_level.set(response["admin"]);
+        this.channel_id.set(Number(response["channel_id"] ?? this.channel_id() ?? 1));
         this.logged_in.set(true);
         this.ready.set(true);
 
@@ -96,7 +97,7 @@ export class AuthService {
         this.token.set(response["access_token"]);
         this.username.set(username);
         this.admin_level.set(0);
-        this.channel_id.set(response["channel_id"]);
+        this.channel_id.set(Number(response["channel_id"] ?? 1));
         this.logged_in.set(true);
         this.ready.set(true);
 
@@ -132,6 +133,7 @@ export class AuthService {
         if (response && response.username) {
           this.username.set(response.username);
           this.admin_level.set(response.admin);
+          this.channel_id.set(Number((response as any).channel_id ?? this.channel_id() ?? 1));
           this.token.set(token);
           this.logged_in.set(true);
         } else {

@@ -11,7 +11,7 @@ export class AuthService {
 
   token: any = "";
   username: string = "";
-  channel_id: number = -1;
+  channel_id: number = 1;
   admin_level: number = 0;
   logged_in: boolean = false;
 
@@ -53,7 +53,7 @@ export class AuthService {
       if ("access_token" in response && "admin" in response) {
         this.admin_level = response['admin'];
         this.token = response['access_token'];
-        this.channel_id = response["channel_id"];
+        this.channel_id = Number(response["channel_id"] ?? 1);
         this.username = username;
         this.logged_in = true;
         this.router.navigate(['/chat']);
@@ -101,7 +101,7 @@ export class AuthService {
         this.admin_level = 0; //response['admin']; //guest is never admin
         this.token = response['access_token'];
         this.username = username;
-        this.channel_id = response["channel_id"];
+        this.channel_id = Number(response["channel_id"] ?? 1);
         this.logged_in = true;
         this.router.navigate(['/chat']);
 
@@ -147,11 +147,11 @@ export class AuthService {
       })
 
     ).subscribe((response) => {
-      if ("username" in response && "admin" in response && "channel_id" in response) {
+      if ("username" in response && "admin" in response) {
         this.token = token
         this.username = response["username"];
         this.admin_level = response["admin"];
-        this.channel_id = response["channel_id"];
+        this.channel_id = Number(response["channel_id"] ?? this.channel_id ?? 1);
         this.logged_in = true;
         this.router.navigate(['/chat']);
       }

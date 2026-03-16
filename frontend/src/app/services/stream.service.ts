@@ -1,7 +1,6 @@
-import { Injectable, Output, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { EventEmitter } from 'stream';
 
 
 
@@ -74,7 +73,7 @@ export class StreamService {
 
 
   connect_websocket() {
-    this.api.connect_stream("/api/stream/ws2", this.auth.token).subscribe(result => {
+    this.api.connect_stream("/api/stream/ws3", this.auth.token).subscribe(result => {
 
 
       if ("error_code" in result && result['error_code'] == -3) {
@@ -85,6 +84,11 @@ export class StreamService {
       }
 
       if ("username" in result && "message" in result && !("toUser" in result)) {
+        const resultChannel = Number(result.channel ?? this.auth.channel_id);
+        if (resultChannel !== this.auth.channel_id) {
+          return;
+        }
+
         this.messages.push({
           cat: "default",
           username: this.html_users[result.username] || result.username,
@@ -121,6 +125,13 @@ export class StreamService {
 
       // user channel switch 
       else if ("cat" in result && (result.cat === "userleft" || result.cat === "userenters") && "username" in result) {
+        if ("channel" in result) {
+          const resultChannel = Number(result.channel);
+          if (resultChannel !== this.auth.channel_id) {
+            return;
+          }
+        }
+
         this.messages.push({
           cat: "statusmsg",
           message: result.cat === "userleft" ? `${this.html_users[result.username] || result.username} left the channel` : `${this.html_users[result.username] || result.username} joined the channel`,
@@ -158,4 +169,3 @@ export class StreamService {
 
 
 }
-

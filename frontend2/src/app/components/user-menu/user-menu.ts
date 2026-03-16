@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 
 
-import { Component, output } from '@angular/core';
+import { Component, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
@@ -44,26 +44,26 @@ export class UserMenu {
   /** ================= USER INFO ================= */
   userinfo: any = {};
 
-  change_pw = false;
-  error_at_html_user = false;
+  change_pw_status = signal<boolean>(false);
+  error_at_html_user = signal<boolean>(false);
 
 
   /** ================= COLOR GRADIENT ================= */
-  color_gradient_error: boolean | null = null;
+  color_gradient_error = signal<boolean|null> (null);
 
   /** ================= FIDO2 ================= */
-  fido_successfull = false;
-  double_register_error = false;
-  no_challenge_error = false;
-  wrong_password_error = false;
+  fido_status_successfull = signal<boolean>(false);
+  double_register_error = signal<boolean>(false);
+  no_challenge_error = signal<boolean>(false);
+  wrong_password_error = signal<boolean>(false);
 
-  fido_credentials: {
+  fido_credentials = signal< {
     id: number;
     name: string;
     created_at: string;
     last_used_at: Date;
     sign_count: number;
-  }[] = [];
+  }[]>([]);
 
   displayedColumns = ['name', 'sign_count', 'last_used', 'actions'];
 
@@ -84,7 +84,7 @@ export class UserMenu {
   fido_credentials_reload() {
     this.api.get('/api/fido2/credentials/', this.auth.token())
       .subscribe(result => {
-        this.fido_credentials = result;
+        this.fido_credentials.set(result);
       });
   }
 
@@ -119,8 +119,8 @@ export class UserMenu {
 
   /** ================= ACTIONS ================= */
   do_changes(value: any) {
-    this.change_pw = false;
-    this.error_at_html_user = false;
+    this.change_pw_status.set(false);
+    this.error_at_html_user.set(false);
 
     const body: any = {
       username_html: value.username_html,
@@ -138,20 +138,20 @@ export class UserMenu {
 
     this.api.post('/api/data/set_user_info/', this.auth.token(), body)
       .subscribe(result => {
-        this.change_pw = result.change_pw;
-        this.error_at_html_user = result.error_at_html_user;
+        this.change_pw_status.set(result.change_pw);
+        this.error_at_html_user.set(result.error_at_html_user);
       });
   }
 
   do_color_gradient(value: any) {
-    this.color_gradient_error = null;
+    this.color_gradient_error.set(null);
 
     this.api.post(
       `/api/data/change_name_color/${value.col1}/${value.col2}/`,
       this.auth.token(),
       {}
     ).subscribe(result => {
-      this.color_gradient_error = !result.success;
+      this.color_gradient_error.set(!result.success);
     });
   }
 
@@ -165,13 +165,13 @@ export class UserMenu {
     );
 
     if (result?.error === 1) {
-      this.double_register_error = true;
+      this.double_register_error.set(true);
     } else if (result?.error === 400) {
-      this.no_challenge_error = true;
+      this.no_challenge_error.set(true);
     } else if (result?.error === 404) {
-      this.wrong_password_error = true;
+      this.wrong_password_error.set(true);
     } else if (result?.ok === true) {
-      this.fido_successfull = true;
+      this.fido_status_successfull.set(true);
       this.fido_credentials_reload();
     }
   }
@@ -182,9 +182,9 @@ export class UserMenu {
   }
 
   resetFidoFlags() {
-    this.fido_successfull = false;
-    this.double_register_error = false;
-    this.no_challenge_error = false;
-    this.wrong_password_error = false;
+    this.fido_status_successfull.set(false);
+    this.double_register_error.set(false);
+    this.no_challenge_error.set(false);
+    this.wrong_password_error.set(false);
   }
 }

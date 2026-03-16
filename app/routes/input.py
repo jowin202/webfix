@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from helper import token_generate
 from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from typing import Optional
 
 import json
 
@@ -14,6 +15,7 @@ router = APIRouter()
 
 class SendMessageRequest(BaseModel):
     message: str
+    channel_id: Optional[int] = None
 
 @router.post("/")
 async def write_text(data: SendMessageRequest, request: Request):
@@ -47,11 +49,37 @@ async def write_text(data: SendMessageRequest, request: Request):
         id = result['id']
         channel_id = int(result['channel_id']) if result else -1
         muted_seconds = result['muted_seconds']
+
+        # Allow clients to choose a target channel if the user can access it.
+        if data.channel_id is not None:
+            can_use_channel = await conn.fetchval(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM channels c
+                    WHERE c.id = $1
+                    AND (
+                        c.always_available = true
+                        OR EXISTS (
+                            SELECT 1
+                            FROM channel_members cm
+                            WHERE cm.user_id = $2
+                            AND cm.channel_id = c.id
+                        )
+                    )
+                )
+                """,
+                int(data.channel_id),
+                request.state.user_id,
+            )
+            if can_use_channel:
+                channel_id = int(data.channel_id)
         
         if muted_seconds <= 0:
             payload = json.dumps({
             "username": result['username'],
-            "message": data.message
+            "message": data.message,
+            "channel": channel_id
             })
             quoted_payload = await conn.fetchval("SELECT quote_literal($1)", payload)
             await conn.execute(f"NOTIFY channel_{channel_id}, {quoted_payload}")
@@ -103,11 +131,14 @@ async def whisper(to_username: str, message: str, request: Request):
                 WHERE username = $1
             """
             result = await conn.fetchrow(query, to_username)
-
-            to_id = result['id']
-            await conn.execute(f"NOTIFY whisper_{to_id}, '{json.dumps({'cat': 'whisper', 'username': from_name, 'msg': message})}'")
+            if result:
+                to_id = result['id']
+                await conn.execute(f"NOTIFY whisper_{to_id}, '{json.dumps({'cat': 'whisper', 'username': from_name, 'msg': message})}'")
+            else:
+                await conn.execute(
+                    f"NOTIFY whisper_{request.state.user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': f'User {to_username} not found.'})}'"
+                )
 
     await release_pg_connection(conn)
     return {"status": "notification sent", "message": message}
-
 

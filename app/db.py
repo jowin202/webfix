@@ -49,19 +49,6 @@ async def pg_db_init():
     conn = await get_pg_connection() 
 
 
-    users_table = await conn.fetchval("""
-        SELECT EXISTS (
-            SELECT 1
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-              AND table_name = 'users'
-        )
-    """)
-
-    if users_table:
-        await release_pg_connection(conn)
-        return
-
     try:
 
         await conn.execute('''
@@ -105,8 +92,19 @@ async def pg_db_init():
             )
         ''')
 
+        await conn.execute('''
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS channel_id INT DEFAULT 1
+        ''')
+
+        await conn.execute('''
+            UPDATE users
+            SET channel_id = 1
+            WHERE channel_id IS NULL
+        ''')
+
         # username unique case insensitive
-        await conn.execute('''CREATE UNIQUE INDEX unique_users ON users (LOWER(username));''')
+        await conn.execute('''CREATE UNIQUE INDEX IF NOT EXISTS unique_users ON users (LOWER(username));''')
 
 
         await conn.execute('''
