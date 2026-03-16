@@ -19,7 +19,7 @@ export class ChatTabs {
   @Input({ required: true }) currentTabIndex!: number; 
 
   @Output() selectThread = new EventEmitter<ChatThread>();
-  @Output() closeThread = new EventEmitter<{ thread: ChatThread, event: Event }>();
+  @Output() closeThread = new EventEmitter<ChatThread>();
 
   // Übergibt das Thread-Objekt an den Parent
   onTabIndexChange(index: number): void {
@@ -29,9 +29,17 @@ export class ChatTabs {
     }
   }
 
-  // Stoppt das Event, um den Tab-Wechsel zu verhindern und sendet den Thread zum Schließen
-  onCloseThread(thread: ChatThread, event: Event): void {
+  onCloseThreadMouseDown(event: MouseEvent): void {
+    event.preventDefault();
     event.stopPropagation();
-    this.closeThread.emit({ thread, event });
+    event.stopImmediatePropagation();
+  }
+
+  // Stoppt das Event, um den Tab-Wechsel zu verhindern und sendet den Thread zum Schließen
+  onCloseThread(thread: ChatThread, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    this.closeThread.emit(thread);
   }
 }

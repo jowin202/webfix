@@ -13,7 +13,10 @@ export class StreamService {
     private platformId = inject(PLATFORM_ID);
 
     private socket: WebSocket | null = null;
+    private socketToken: string | null = null;
+    private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     private pendingCommands: string[] = [];
+    private desiredChannelSubscriptions = new Set<number>();
 
     /* ───────────── Signals (State) ───────────── */
 
@@ -30,13 +33,17 @@ export class StreamService {
     connect_stream(url: string, token?: string): Observable<unknown> {
         return new Observable(observer => {
             const separator = url.includes('?') ? '&' : '?';
+            const connectToken = token ?? '';
             const ws = new WebSocket(
                 token ? `${url}${separator}token=${encodeURIComponent(token)}` : url
             );
 
             ws.onopen = () => {
                 this.socket = ws;
+                this.socketToken = connectToken;
+                this.clearReconnectTimer();
                 this.flushPendingCommands();
+                this.syncChannelSubscriptions();
             };
             ws.onmessage = e => {
                 try {
@@ -47,12 +54,19 @@ export class StreamService {
             };
             ws.onerror = e => observer.error(e);
             ws.onclose = () => {
-                if (this.socket === ws) this.socket = null;
+                if (this.socket === ws) {
+                    this.socket = null;
+                    this.socketToken = null;
+                }
+                if (this.auth.logged_in() && this.auth.token() && this.auth.token() === connectToken) {
+                    this.scheduleReconnect();
+                }
                 observer.complete();
             };
 
             return () => {
                 if (this.socket === ws) this.socket = null;
+                if (this.socketToken === connectToken) this.socketToken = null;
                 ws.close(1000, 'unsubscribe');
             };
         });
@@ -60,20 +74,34 @@ export class StreamService {
 
     connect() {
         if (!isPlatformBrowser(this.platformId)) return;
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
-
         const token = this.auth.token();
         if (!token) return;
+
+        if (this.socket && this.socket.readyState === WebSocket.OPEN && this.socketToken === token) {
+            return;
+        }
+
+        if (this.socket && this.socketToken !== token) {
+            this.socket.close(1000, 'token-changed');
+            this.socket = null;
+            this.socketToken = null;
+        }
+
+        if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
+            return;
+        }
 
         this.connect_stream('/api/stream/ws3?manual_subscribe=1', token)
             .subscribe(event => this.handleEvent(event));
     }
 
     subscribeChannel(channelId: number) {
+        this.desiredChannelSubscriptions.add(channelId);
         this.sendCommand({ action: 'subscribe', channel: channelId });
     }
 
     unsubscribeChannel(channelId: number) {
+        this.desiredChannelSubscriptions.delete(channelId);
         this.sendCommand({ action: 'unsubscribe', channel: channelId });
     }
 
@@ -233,5 +261,26 @@ export class StreamService {
             this.socket.send(payload);
         }
         this.pendingCommands = [];
+    }
+
+    private syncChannelSubscriptions() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        for (const channelId of this.desiredChannelSubscriptions) {
+            this.socket.send(JSON.stringify({ action: 'subscribe', channel: channelId }));
+        }
+    }
+
+    private scheduleReconnect() {
+        if (this.reconnectTimer) return;
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.connect();
+        }, 750);
+    }
+
+    private clearReconnectTimer() {
+        if (!this.reconnectTimer) return;
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
     }
 }

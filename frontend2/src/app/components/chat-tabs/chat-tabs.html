@@ -15,7 +15,12 @@
         {{ thread.name }}
         
         @if (thread.id !== 'channel-1') {
-          <button mat-icon-button (click)="onCloseThread(thread, $event)">
+          <button
+            mat-icon-button
+            type="button"
+            (mousedown)="onCloseThreadMouseDown($event)"
+            (click)="onCloseThread(thread, $event)"
+          >
             <mat-icon>close</mat-icon>
           </button>
         }

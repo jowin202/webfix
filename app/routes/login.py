@@ -29,7 +29,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     try:
         conn = await get_pg_connection()
         query = '''
-            SELECT id, password, is_activated, admin, login_msg,
+            SELECT id, password, is_activated, admin, login_msg, channel_id,
             CASE 
                 WHEN kicked_until = 'infinity'::timestamp 
                     THEN 9223372036854775807
@@ -88,7 +88,12 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     if not valid:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
-    return {"access_token": token, "admin": result['admin'], "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "admin": result['admin'],
+        "channel_id": int(result['channel_id'] or 1),
+        "token_type": "bearer",
+    }
 
 
 
@@ -143,7 +148,7 @@ async def login(username : str):
 
     if not valid:
         raise HTTPException(status_code=400, detail="Guest Login Error")
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "channel_id": 1, "token_type": "bearer"}
 
 
 
@@ -155,6 +160,7 @@ async def login_token(token : str):
     conn = await get_pg_connection() 
     query = '''
         SELECT id, username, admin,
+            channel_id,
             CASE 
                 WHEN kicked_until = 'infinity'::timestamp 
                     THEN 9223372036854775807
@@ -180,7 +186,8 @@ async def login_token(token : str):
     
     username = row['username'] if row and "username" in row else ""
     admin = row['admin'] if row and "admin" in row else ""
-    return { "username" : username, "admin": admin }
+    channel_id = int(row['channel_id'] or 1) if row and "channel_id" in row else 1
+    return { "username" : username, "admin": admin, "channel_id": channel_id }
 
 
 
@@ -251,6 +258,5 @@ async def logout(token: str = Depends(verify_token)):
     await release_pg_connection(conn)
     
     return True
-
 
 

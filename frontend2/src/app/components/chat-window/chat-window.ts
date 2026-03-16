@@ -59,6 +59,7 @@ export class ChatWindow {
       .subscribe(result => {
         if (this.hasApiError(result)) return;
         this.channels.set(result);
+        this.syncChannelThreadNames(result as Channel[]);
       });
   }
   
@@ -158,6 +159,34 @@ export class ChatWindow {
     if (!threadId.startsWith('channel-')) return null;
     const id = Number(threadId.slice('channel-'.length));
     return Number.isFinite(id) ? id : null;
+  }
+
+  private syncChannelThreadNames(channels: Channel[]) {
+    const nameById = new Map<number, string>(channels.map(c => [c.id, c.name]));
+    let currentId: string | null = null;
+    let nextCurrent: ChatThread | null = null;
+    const current = this.currentThread();
+    if (current) currentId = current.id;
+
+    this.activeThreads.update(threads => {
+      let changed = false;
+      const updated = threads.map(thread => {
+        if (thread.type !== 'channel') return thread;
+        const channelId = this.getChannelIdFromThreadId(thread.id);
+        if (channelId === null) return thread;
+        const resolvedName = nameById.get(channelId);
+        if (!resolvedName || resolvedName === thread.name) return thread;
+        changed = true;
+        const nextThread = { ...thread, name: resolvedName };
+        if (currentId === thread.id) nextCurrent = nextThread;
+        return nextThread;
+      });
+      return changed ? updated : threads;
+    });
+
+    if (nextCurrent) {
+      this.currentThread.set(nextCurrent);
+    }
   }
 
   private hasApiError(result: any): boolean {
@@ -312,7 +341,25 @@ export class ChatWindow {
       this.activeThreads.update(threads => [...threads, thread]);
       this.currentThread.set(thread);
     } else {
-      this.currentThread.set(existingThread);
+      if (existingThread.type === 'channel') {
+        const channelId = this.getChannelIdFromThreadId(existingThread.id);
+        if (channelId !== null) {
+          const resolvedName = this.channelName(channelId);
+          if (resolvedName && resolvedName !== existingThread.name) {
+            const renamedThread = { ...existingThread, name: resolvedName };
+            this.activeThreads.update(threads =>
+              threads.map(t => (t.id === renamedThread.id ? renamedThread : t))
+            );
+            this.currentThread.set(renamedThread);
+          } else {
+            this.currentThread.set(existingThread);
+          }
+        } else {
+          this.currentThread.set(existingThread);
+        }
+      } else {
+        this.currentThread.set(existingThread);
+      }
     }
     if (thread.type === 'channel') {
       const channelId = this.getChannelIdFromThreadId(thread.id);
@@ -396,13 +443,11 @@ export class ChatWindow {
     this.selectThread(privateThread);
   }
 
-  closeThread(data: { thread: ChatThread, event: Event }): void {
-    data.event.stopPropagation();
+  closeThread(thread: ChatThread): void {
+    this.activeThreads.update(threads => threads.filter(t => t.id !== thread.id));
 
-    this.activeThreads.update(threads => threads.filter(t => t.id !== data.thread.id));
-
-    if (data.thread.type === 'channel') {
-      const channelId = this.getChannelIdFromThreadId(data.thread.id);
+    if (thread.type === 'channel') {
+      const channelId = this.getChannelIdFromThreadId(thread.id);
       if (channelId) {
         const channel = this.channels().find(c => c.id === channelId);
         if (channel && !channel.always_available) {
@@ -413,7 +458,7 @@ export class ChatWindow {
       }
     }
 
-    if (this.currentThread()?.id === data.thread.id) {
+    if (this.currentThread()?.id === thread.id) {
       const remainingThreads = this.activeThreads();
       this.currentThread.set(remainingThreads.length > 0 ? remainingThreads[0] : null);
     }
