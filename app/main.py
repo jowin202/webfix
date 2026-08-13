@@ -121,13 +121,6 @@ async def spa_fallback(request: Request, call_next):
     ):
         return await call_next(request)
 
-    # Frontend2 is mounted under /new
-    if request.url.path == "/new" or request.url.path.startswith("/new/"):
-        with open("static/new/index.html") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-
-    # Frontend1 for anything else
-    with open("static/index.html") as f:
+    with open("static/index.csr.html") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
