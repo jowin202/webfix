@@ -21,6 +21,7 @@ export interface PublicMessage {
   username?: string;
   message: string;
   timestamp?: Date;
+  channel?: number;
 }
 
 export interface PrivateMessage {
@@ -84,15 +85,11 @@ export class StreamService {
       }
 
       if ("username" in result && "message" in result && !("toUser" in result)) {
-        const resultChannel = Number(result.channel ?? this.auth.channel_id);
-        if (resultChannel !== this.auth.channel_id) {
-          return;
-        }
-
         this.messages.push({
           cat: "default",
           username: this.html_users[result.username] || result.username,
           message: result.message,
+          channel: Number(result.channel ?? this.auth.channel_id),
         });
       }
 
@@ -120,21 +117,16 @@ export class StreamService {
         this.messages.push({
           cat: "statusmsg",
           message: `${result.msg}`,
+          channel: "channel" in result ? Number(result.channel) : undefined,
         });
       }
 
-      // user channel switch 
+      // user channel switch
       else if ("cat" in result && (result.cat === "userleft" || result.cat === "userenters") && "username" in result) {
-        if ("channel" in result) {
-          const resultChannel = Number(result.channel);
-          if (resultChannel !== this.auth.channel_id) {
-            return;
-          }
-        }
-
         this.messages.push({
           cat: "statusmsg",
           message: result.cat === "userleft" ? `${this.html_users[result.username] || result.username} left the channel` : `${this.html_users[result.username] || result.username} joined the channel`,
+          channel: "channel" in result ? Number(result.channel) : undefined,
         });
         this.user_changed_signal.update(v => v + 1); //change online list
       }

@@ -80,8 +80,16 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
       });
   }
   switchChannel(data: any) {
-    this.auth.channel_id = Number(data || 1);
-    this.stream.messages = [];
+    const to_channel_id = Number(data || 1);
+    const from_channel_id = this.auth.channel_id;
+    if (to_channel_id === from_channel_id) {
+      return;
+    }
+
+    this.api.post(`/api/channels/switch/`, this.auth.token, { from_channel_id, to_channel_id })
+      .subscribe();
+
+    this.auth.channel_id = to_channel_id;
     this.update_online_list();
   }
 

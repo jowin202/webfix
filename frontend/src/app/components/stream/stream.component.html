@@ -1,4 +1,5 @@
         @for (message of stream.messages; track message) {
+          @if (message.channel === undefined || message.channel === auth.channel_id) {
           <div class="message">
             @if (message.cat == 'default') {
               <div>
@@ -27,4 +28,5 @@
             </div>
           }
         </div>
+          }
       }

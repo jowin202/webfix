@@ -27,6 +27,11 @@ class InviteChannelRequest(BaseModel):
     username: str
 
 
+class SwitchChannelRequest(BaseModel):
+    to_channel_id: int
+    from_channel_id: Optional[int] = None
+
+
 async def _notify_channel_access(conn, user_id: int, action: str, channel_id: int):
     await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{user_id}", f"{action} {channel_id}")
 
@@ -281,6 +286,26 @@ async def join_channel(
 @router.post("/add_channel/{channel_id}/")
 async def add_channel_by_id(channel_id: int, request: Request):
     return await join_channel(channel_id, request, JoinChannelRequest())
+
+
+@router.post("/switch/")
+async def switch_channel(data: SwitchChannelRequest, request: Request):
+    conn = await get_pg_connection()
+    try:
+        to_channel = await _channel_with_access_flags(conn, data.to_channel_id, request.state.user_id)
+        if not to_channel or not (to_channel["is_member"] or to_channel["always_available"]):
+            raise HTTPException(status_code=403, detail="No access to that channel.")
+
+        actor = await _username_by_id(conn, request.state.user_id)
+        message = f'{actor} switched to channel "{to_channel["name"]}".'
+
+        if data.from_channel_id is not None and data.from_channel_id != data.to_channel_id:
+            await _notify_status_message(conn, message, "channel", channel_id=data.from_channel_id)
+        await _notify_status_message(conn, message, "channel", channel_id=data.to_channel_id)
+
+        return {"result": True}
+    finally:
+        await release_pg_connection(conn)
 
 
 @router.post("/remove_channel/{channel_id}/")
