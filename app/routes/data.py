@@ -70,8 +70,24 @@ async def get_users(request : Request):
 @router.get("/users_by_channel_id/{id}/")
 async def get_users_by_channel_id(id : int):
 
-    conn = await get_pg_connection() 
-    query = "SELECT u.username, u.username_html FROM users u WHERE u.token != '' AND u.channel_id = $1"
+    conn = await get_pg_connection()
+    query = """
+        SELECT u.username, u.username_html
+        FROM users u
+        WHERE u.token != ''
+        AND (
+            EXISTS (
+                SELECT 1 FROM channels c
+                WHERE c.id = $1
+                AND c.always_available = true
+            )
+            OR EXISTS (
+                SELECT 1 FROM channel_members cm
+                WHERE cm.channel_id = $1
+                AND cm.user_id = u.id
+            )
+        )
+    """
     result = await conn.fetch(query, id)
     await release_pg_connection(conn)
 

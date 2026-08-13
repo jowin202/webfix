@@ -74,3 +74,55 @@
       </div>
     </div>
   </fieldset>
+</form>
+
+<fieldset style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-top: 16px;">
+  <legend style="font-weight: bold; padding: 0 0.5rem;">User Management</legend>
+
+  <div class="form-group">
+    <label for="action_duration">Duration:</label>
+    <select id="action_duration" name="action_duration" [(ngModel)]="action_duration">
+      <option [ngValue]="60">1 minute</option>
+      <option [ngValue]="300">5 minutes</option>
+      <option [ngValue]="3600">1 hour</option>
+      <option [ngValue]="86400">1 day</option>
+      <option [ngValue]="-1">permanent</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="action_silent">Silent (no chat notice):</label>
+    <input type="checkbox" id="action_silent" name="action_silent" [(ngModel)]="action_silent" />
+  </div>
+
+  <span class="form-note">
+    @if (this.user_action_error) {
+    <div>Error: action failed</div>
+    }
+  </span>
+
+  <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr style="background: #f9f9f9;">
+        <th style="text-align:left; padding: 8px; border-bottom: 1px solid #ccc;">Username</th>
+        <th style="text-align:left; padding: 8px; border-bottom: 1px solid #ccc;">Kicked until</th>
+        <th style="text-align:left; padding: 8px; border-bottom: 1px solid #ccc;">Muted until</th>
+        <th style="text-align:left; padding: 8px; border-bottom: 1px solid #ccc;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of this.users; track u.id) {
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 8px;"><span [innerHTML]="u.username_html || u.username"></span></td>
+          <td style="padding: 8px;">{{ formatTime(u.kicked_until) }}</td>
+          <td style="padding: 8px;">{{ formatTime(u.muted_until) }}</td>
+          <td style="padding: 8px;">
+            <button type="button" (click)="kick_user(u, action_duration, action_silent)">Kick</button>
+            <button type="button" (click)="kick_user(u, 0, action_silent)">Unkick</button>
+            <button type="button" (click)="mute_user(u, action_duration, action_silent)">Mute</button>
+            <button type="button" (click)="mute_user(u, 0, action_silent)">Unmute</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</fieldset>

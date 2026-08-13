@@ -17,6 +17,11 @@ export class AdminMenuComponent {
   menu_values : any = {
   };
 
+  users: any[] = [];
+  user_action_error: boolean = false;
+  action_duration: number = 300;
+  action_silent: boolean = false;
+
 
   ngOnInit(): void {
     this.api.post("/api/admin/settings/get_settings/", this.auth.token,[
@@ -36,6 +41,53 @@ export class AdminMenuComponent {
     ])
       .subscribe(result => {
         this.menu_values = result
+      });
+
+    this.load_users();
+  }
+
+  load_users() {
+    this.api.get("/api/admin/userdb/get_all_users/", this.auth.token)
+      .subscribe(result => {
+        if (!("error_code" in result)) {
+          this.users = result;
+        }
+      });
+  }
+
+  formatTime(timestamp: any): string {
+    if (!timestamp) {
+      return '-';
+    }
+    const date = new Date(timestamp);
+    if (date.getFullYear() > 9000) {
+      return 'permanent';
+    }
+    if (date.getTime() <= Date.now()) {
+      return '-';
+    }
+    return date.toLocaleString();
+  }
+
+  kick_user(user: any, time: number, silent: boolean) {
+    this.user_action_error = false;
+    this.api.post("/api/admin/kick_user/", this.auth.token, { user_id: user.id, time, silent })
+      .subscribe(result => {
+        if (result === false) {
+          this.user_action_error = true;
+        }
+        this.load_users();
+      });
+  }
+
+  mute_user(user: any, time: number, silent: boolean) {
+    this.user_action_error = false;
+    this.api.post("/api/admin/mute_user/", this.auth.token, { user_id: user.id, time, silent })
+      .subscribe(result => {
+        if (result === false) {
+          this.user_action_error = true;
+        }
+        this.load_users();
       });
   }
 
