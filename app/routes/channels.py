@@ -32,10 +32,6 @@ class SwitchChannelRequest(BaseModel):
     from_channel_id: Optional[int] = None
 
 
-async def _notify_channel_access(conn, user_id: int, action: str, channel_id: int):
-    await conn.execute("SELECT pg_notify($1, $2)", f"whisper_{user_id}", f"{action} {channel_id}")
-
-
 async def _notify_status_message(
     conn,
     message: str,
@@ -213,7 +209,6 @@ async def create_channel(
             channel_id,
         )
 
-        await _notify_channel_access(conn, request.state.user_id, "add", channel_id)
         actor = await _username_by_id(conn, request.state.user_id)
         await _notify_status_message(
             conn,
@@ -270,7 +265,6 @@ async def join_channel(
             channel_id,
         )
 
-        await _notify_channel_access(conn, request.state.user_id, "add", channel_id)
         actor = await _username_by_id(conn, request.state.user_id)
         await _notify_status_message(
             conn,
@@ -326,7 +320,6 @@ async def remove_channel_by_id(channel_id: int, request: Request):
         )
 
         deleted_channel_id = await _delete_channel_if_empty(conn, channel_id)
-        await _notify_channel_access(conn, request.state.user_id, "remove", channel_id)
 
         actor = await _username_by_id(conn, request.state.user_id)
         if delete_result.endswith("1"):
@@ -397,8 +390,6 @@ async def invite_to_channel(
             request.state.user_id,
         )
 
-        # Trigger client refresh for the invited user.
-        await _notify_channel_access(conn, target_user_id, "add", payload_channel_id)
         await _notify_status_message(
             conn,
             f'You were invited to channel "{channel["name"]}".',

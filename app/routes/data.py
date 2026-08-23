@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from helper import token_generate, calc_hmac
 from db import get_pg_connection, release_pg_connection
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from presence import get_presence
 
 
 from settings import SettingsManager
@@ -69,27 +70,20 @@ async def get_users(request : Request):
 
 @router.get("/users_by_channel_id/{id}/")
 async def get_users_by_channel_id(id : int):
+    # Who is actually connected to this channel right now (see presence.py,
+    # updated by the /ws connection lifecycle) -- not just who is a member.
+    user_ids = list(get_presence(id))
+    if not user_ids:
+        return []
 
     conn = await get_pg_connection()
     query = """
         SELECT u.username, u.username_html
         FROM users u
-        WHERE u.token != ''
-        AND (
-            EXISTS (
-                SELECT 1 FROM channels c
-                WHERE c.id = $1
-                AND c.always_available = true
-            )
-            OR EXISTS (
-                SELECT 1 FROM channel_members cm
-                WHERE cm.channel_id = $1
-                AND cm.user_id = u.id
-            )
-        )
+        WHERE u.id = ANY($1::int[])
         ORDER BY u.username
     """
-    result = await conn.fetch(query, id)
+    result = await conn.fetch(query, user_ids)
     await release_pg_connection(conn)
 
     return result
