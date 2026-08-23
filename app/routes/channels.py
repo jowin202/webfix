@@ -290,18 +290,14 @@ async def add_channel_by_id(channel_id: int, request: Request):
 
 @router.post("/switch/")
 async def switch_channel(data: SwitchChannelRequest, request: Request):
+    # Pure access check: the "left/joined the channel" notices themselves are
+    # emitted by the /ws connection lifecycle (see routes/stream.py), which
+    # already knows both channels and sends exactly one message per side.
     conn = await get_pg_connection()
     try:
         to_channel = await _channel_with_access_flags(conn, data.to_channel_id, request.state.user_id)
         if not to_channel or not (to_channel["is_member"] or to_channel["always_available"]):
             raise HTTPException(status_code=403, detail="No access to that channel.")
-
-        actor = await _username_by_id(conn, request.state.user_id)
-        message = f'{actor} switched to channel "{to_channel["name"]}".'
-
-        if data.from_channel_id is not None and data.from_channel_id != data.to_channel_id:
-            await _notify_status_message(conn, message, "channel", channel_id=data.from_channel_id)
-        await _notify_status_message(conn, message, "channel", channel_id=data.to_channel_id)
 
         return {"result": True}
     finally:

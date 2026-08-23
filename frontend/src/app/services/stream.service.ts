@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 
@@ -73,8 +74,32 @@ export class StreamService {
 
 
 
-  connect_websocket() {
-    this.api.connect_stream("/api/stream/ws3", this.auth.token).subscribe(result => {
+  private streamSubscription: Subscription | null = null;
+  private send: ((message: string) => void) | null = null;
+
+  // Opens a fresh connection bound to one channel. The backend never
+  // multiplexes channels onto a connection, so switching channels means
+  // tearing down the old connection and opening a new one -- there is no
+  // subscribe/unsubscribe protocol for the client to get wrong.
+  connect_websocket(channelId?: number, announce: boolean = true, fromChannelId?: number) {
+    const targetChannel = channelId ?? this.auth.channel_id;
+
+    // Tell the old connection which channel we're switching to, so its
+    // server-side disconnect announces "left the channel (to Y)" instead of
+    // a separate, unrelated plain "left the channel" message.
+    if (fromChannelId !== undefined) {
+      this.send?.(JSON.stringify({ action: "switch_leave", to_channel_id: targetChannel }));
+    }
+
+    this.streamSubscription?.unsubscribe();
+    this.send = null;
+
+    const fromParam = fromChannelId !== undefined ? `&from_channel_id=${fromChannelId}` : '';
+    const url = `/api/stream/ws?channel_id=${targetChannel}&announce=${announce ? 1 : 0}${fromParam}`;
+
+    this.streamSubscription = this.api.connect_stream(url, this.auth.token, 5000, (send) => {
+      this.send = send;
+    }).subscribe(result => {
 
 
       if ("error_code" in result && result['error_code'] == -3) {
@@ -123,9 +148,17 @@ export class StreamService {
 
       // user channel switch
       else if ("cat" in result && (result.cat === "userleft" || result.cat === "userenters") && "username" in result) {
+        const displayName = this.html_users[result.username] || result.username;
+        const otherChannel = "other_channel_name" in result && result.other_channel_name ? result.other_channel_name : undefined;
+        let text: string;
+        if (result.cat === "userleft") {
+          text = otherChannel ? `${displayName} left the channel (to ${otherChannel})` : `${displayName} left the channel`;
+        } else {
+          text = otherChannel ? `${displayName} joined the channel (from ${otherChannel})` : `${displayName} joined the channel`;
+        }
         this.messages.push({
           cat: "statusmsg",
-          message: result.cat === "userleft" ? `${this.html_users[result.username] || result.username} left the channel` : `${this.html_users[result.username] || result.username} joined the channel`,
+          message: text,
           channel: "channel" in result ? Number(result.channel) : undefined,
         });
         this.user_changed_signal.update(v => v + 1); //change online list

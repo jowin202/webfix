@@ -32,7 +32,7 @@
 
     <div class="channel-switcher">
       <label for="channelSelect">Channel:</label>
-      <select id="channelSelect" [(ngModel)]="this.auth.channel_id" (change)="switchChannel(channelSwitch.value)"
+      <select id="channelSelect" [ngModel]="this.auth.channel_id" (change)="switchChannel(channelSwitch.value)"
         #channelSwitch>
         @for (channel of channels; track channel) {
           <option [value]="channel.id">{{ channel.name }}</option>

@@ -87,6 +87,7 @@ async def get_users_by_channel_id(id : int):
                 AND cm.user_id = u.id
             )
         )
+        ORDER BY u.username
     """
     result = await conn.fetch(query, id)
     await release_pg_connection(conn)

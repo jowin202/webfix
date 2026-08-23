@@ -86,10 +86,16 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // The old connection is told which channel we're heading to (so it can
+    // announce "left the channel (to Y)"), and the new one is told where we
+    // came from (so it can announce "joined the channel (from X)") -- one
+    // message per side, no separate "switched" notice needed.
+    this.auth.channel_id = to_channel_id;
+    this.stream.connect_websocket(to_channel_id, false, from_channel_id);
+
     this.api.post(`/api/channels/switch/`, this.auth.token, { from_channel_id, to_channel_id })
       .subscribe();
 
-    this.auth.channel_id = to_channel_id;
     this.update_online_list();
   }
 

@@ -178,12 +178,19 @@ export class ApiService {
 connect_stream(
   url: string,
   auth_token?: string,
-  retryInterval: number = 5000 // 5 seconds
+  retryInterval: number = 5000, // 5 seconds
+  onOpen?: (send: (message: string) => void) => void
 ): Observable<any> {
   return new Observable((observer: Observer<any>) => {
     let manuallyClosed = false;
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const send = (message: string) => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(message);
+      }
+    };
 
     const shouldReconnect = (event: CloseEvent) => {
       // Only treat as unexpected if not clean OR close code not normal/going-away
@@ -208,12 +215,14 @@ connect_stream(
     };
 
     const connect = () => {
-      const wsUrl = auth_token ? `${url}?token=${auth_token}` : url;
+      const separator = url.includes('?') ? '&' : '?';
+      const wsUrl = auth_token ? `${url}${separator}token=${auth_token}` : url;
       socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
         // reset any pending retry
         clearReconnectTimer();
+        onOpen?.(send);
       };
 
       socket.onmessage = (event) => {
