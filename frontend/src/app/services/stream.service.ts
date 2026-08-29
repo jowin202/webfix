@@ -19,6 +19,8 @@ export type PublicMessageCategory =
 export interface PublicMessage {
   cat: PublicMessageCategory;
   username?: string;
+  to?: string;
+  own?: boolean;
   message: string;
   timestamp?: Date;
   channel?: number;
@@ -117,8 +119,8 @@ export class StreamService {
         });
       }
 
-      else if ("cat" in result && result.cat === "whisper" && "username" in result && "msg" in result) {
-        const from = result.username;
+      else if ("cat" in result && result.cat === "whisper" && "from" in result && "to" in result && "msg" in result) {
+        const from = result.from;
         const msg: PrivateMessage = {
           from,
           message: result.msg,
@@ -128,7 +130,9 @@ export class StreamService {
 
         this.messages.push({
           cat: "whisper",
-          username: this.html_users[result.username] || result.username,
+          username: this.html_users[result.from] || result.from,
+          to: this.html_users[result.to] || result.to,
+          own: result.from === this.auth.username,
           message: result.msg,
         });
 

@@ -7,8 +7,11 @@
             }
             @if (message.cat == 'whisper') {
               <div>
-                <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span
-              [innerHTML]="message.message"></span>
+                @if (message.own) {
+                  <i>Whisper to</i>&nbsp;<span [innerHTML]="message.to"></span>:&nbsp;<span [innerHTML]="message.message"></span>
+                } @else {
+                  <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span [innerHTML]="message.message"></span>
+                }
             </div>
           }
           @if (message.cat == 'statusmsg') {

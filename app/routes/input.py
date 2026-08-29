@@ -133,7 +133,10 @@ async def whisper(to_username: str, message: str, request: Request):
             result = await conn.fetchrow(query, to_username)
             if result:
                 to_id = result['id']
-                await conn.execute(f"NOTIFY whisper_{to_id}, '{json.dumps({'cat': 'whisper', 'username': from_name, 'msg': message})}'")
+                payload = json.dumps({'cat': 'whisper', 'from': from_name, 'to': to_username, 'msg': message})
+                await conn.execute(f"NOTIFY whisper_{to_id}, '{payload}'")
+                if to_id != request.state.user_id:
+                    await conn.execute(f"NOTIFY whisper_{request.state.user_id}, '{payload}'")
             else:
                 await conn.execute(
                     f"NOTIFY whisper_{request.state.user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': f'User {to_username} not found.'})}'"
