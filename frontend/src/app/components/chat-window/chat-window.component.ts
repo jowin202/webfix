@@ -161,6 +161,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   whisperEntryError: string | null = null;
 
   @ViewChild('whisperNameField') whisperNameField?: ElementRef<HTMLInputElement>;
+  @ViewChild('whisperEntryContainer') whisperEntryContainer?: ElementRef<HTMLDivElement>;
 
   toggleWhisperEntry() {
     this.showWhisperEntry = !this.showWhisperEntry;
@@ -168,6 +169,14 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
     this.whisperEntryError = null;
     if (this.showWhisperEntry) {
       this.load_all_users();
+      // The [hidden] binding below only flips once Angular's own change
+      // detection runs, which is too late for focus() -- browsers refuse to
+      // focus an element that is still hidden at call time. Unhide the
+      // container natively first, synchronously, in this same click handler.
+      const container = this.whisperEntryContainer?.nativeElement;
+      if (container) {
+        container.hidden = false;
+      }
       this.whisperNameField?.nativeElement?.focus();
     } else {
       this.inputField?.nativeElement?.focus();

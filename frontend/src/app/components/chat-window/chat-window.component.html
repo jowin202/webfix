@@ -52,7 +52,7 @@
         <h3>Online</h3>
         <button type="button" class="menu-button whisper-entry-toggle" (click)="toggleWhisperEntry()">Whisper</button>
       </div>
-      <div class="whisper-entry" [hidden]="!showWhisperEntry">
+      <div class="whisper-entry" [hidden]="!showWhisperEntry" #whisperEntryContainer>
         <input placeholder="Username ..." class="whisper-entry-input" autocomplete="off" #whisperNameField
           (input)="onWhisperInput(whisperNameField.value)"
           (keydown.enter)="whisperToUsername(whisperNameField.value); whisperNameField.value='';" />
