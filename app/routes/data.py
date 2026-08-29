@@ -60,8 +60,13 @@ async def get_toplist():
 @router.get("/users/")
 async def get_users(request : Request):
 
-    conn = await get_pg_connection() 
-    query = "SELECT u.id, u.username, u.username_html, 1 as status FROM users u WHERE u.token != ''"
+    conn = await get_pg_connection()
+    query = """
+        SELECT u.id, u.username, u.username_html,
+        CASE WHEN u.token != '' THEN 1 ELSE 0 END as status
+        FROM users u
+        ORDER BY u.username
+    """
     result = await conn.fetch(query)
     await release_pg_connection(conn)
 

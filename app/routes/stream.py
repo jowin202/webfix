@@ -165,6 +165,30 @@ async def websocket_endpoint_single_channel(websocket: WebSocket):
         elif announcement_registered:
             await websocket.send_text(json.dumps({"cat": "announcement", "msg": announcement_registered}))
 
+        # deliver whispers that arrived while this user was offline, then
+        # forget them -- they are shown exactly once, on the next login
+        pending_messages = await listen_conn.fetch(
+            """
+            WITH deleted AS (
+                DELETE FROM private_messages
+                WHERE receiver = $1
+                RETURNING sender, message, sent_at
+            )
+            SELECT u.username AS from_username, deleted.message
+            FROM deleted
+            JOIN users u ON u.id = deleted.sender
+            ORDER BY deleted.sent_at
+            """,
+            user_id,
+        )
+        for pending in pending_messages:
+            await websocket.send_text(json.dumps({
+                "cat": "whisper",
+                "from": pending["from_username"],
+                "to": username,
+                "msg": pending["message"],
+            }))
+
         while True:
             raw_msg = await websocket.receive_text()
 

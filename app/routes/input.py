@@ -126,17 +126,32 @@ async def whisper(to_username: str, message: str, request: Request):
 
         if muted_seconds <= 0:
             query = """
-                SELECT id
-                FROM users 
-                WHERE username = $1
+                SELECT id, username, token
+                FROM users
+                WHERE LOWER(username) = LOWER($1)
             """
             result = await conn.fetchrow(query, to_username)
             if result:
                 to_id = result['id']
+                to_username = result['username']
+                is_online = bool(result['token'])
                 payload = json.dumps({'cat': 'whisper', 'from': from_name, 'to': to_username, 'msg': message})
-                await conn.execute(f"NOTIFY whisper_{to_id}, '{payload}'")
+
+                if is_online:
+                    await conn.execute(f"NOTIFY whisper_{to_id}, '{payload}'")
+                else:
+                    await conn.execute(
+                        "INSERT INTO private_messages (sender, receiver, message) VALUES ($1, $2, $3)",
+                        request.state.user_id, to_id, message
+                    )
+
                 if to_id != request.state.user_id:
                     await conn.execute(f"NOTIFY whisper_{request.state.user_id}, '{payload}'")
+
+                if not is_online:
+                    await conn.execute(
+                        f"NOTIFY whisper_{request.state.user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': f'{to_username} is offline. Your message will be delivered on their next login.'})}'"
+                    )
             else:
                 await conn.execute(
                     f"NOTIFY whisper_{request.state.user_id}, '{json.dumps({'cat': 'statusmsg', 'msg': f'User {to_username} not found.'})}'"

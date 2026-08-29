@@ -19,6 +19,12 @@ interface OnlineUsers {
   username_html: string;
 }
 
+interface UserStatus {
+  username: string;
+  username_html: string;
+  status: number;
+}
+
 interface Channels {
   id: number;
   name: string;
@@ -42,6 +48,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
 
   channels: Channels[] = [];
   onlineUsers: OnlineUsers[] = [];
+  allUsers: UserStatus[] = [];
   messages: ChatMessage[] = [];
 
   showMenu: Boolean = false;
@@ -70,6 +77,15 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   }
 
 
+
+  load_all_users() {
+    this.api.get("/api/data/users/", this.auth.token)
+      .subscribe(result => {
+        if (!("error_code" in result)) {
+          this.allUsers = result;
+        }
+      });
+  }
 
   update_channel_list() {
     this.api.get("/api/data/channels/", this.auth.token)
@@ -138,6 +154,65 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
   clearWhisperTarget() {
     this.whisperTarget = null;
     this.inputField?.nativeElement?.focus();
+  }
+
+  showWhisperEntry: boolean = false;
+  whisperSuggestions: UserStatus[] = [];
+  whisperEntryError: string | null = null;
+
+  @ViewChild('whisperNameField') whisperNameField?: ElementRef<HTMLInputElement>;
+
+  toggleWhisperEntry() {
+    this.showWhisperEntry = !this.showWhisperEntry;
+    this.whisperSuggestions = [];
+    this.whisperEntryError = null;
+    if (this.showWhisperEntry) {
+      this.load_all_users();
+      this.whisperNameField?.nativeElement?.focus();
+    } else {
+      this.inputField?.nativeElement?.focus();
+    }
+  }
+
+  onWhisperInput(value: string) {
+    this.whisperEntryError = null;
+    const query = value.trim().toLowerCase();
+    if (!query) {
+      this.whisperSuggestions = [];
+      return;
+    }
+    this.whisperSuggestions = this.allUsers
+      .filter(user => user.username.toLowerCase().includes(query))
+      .slice(0, 8);
+  }
+
+  selectWhisperSuggestion(user: UserStatus) {
+    this.whisperToUsername(user.username);
+  }
+
+  // Only ever hands off to setWhisperTarget for a username that is actually
+  // known to exist -- an unknown name is rejected here, before a whisper
+  // target (and thus a doomed /wh request) is ever set.
+  whisperToUsername(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      this.showWhisperEntry = false;
+      this.whisperSuggestions = [];
+      this.whisperEntryError = null;
+      return;
+    }
+
+    const match = this.allUsers.find(user => user.username.toLowerCase() === trimmed.toLowerCase());
+    if (!match) {
+      this.whisperEntryError = `User "${trimmed}" not found.`;
+      this.whisperSuggestions = [];
+      return;
+    }
+
+    this.setWhisperTarget(match.username);
+    this.showWhisperEntry = false;
+    this.whisperSuggestions = [];
+    this.whisperEntryError = null;
   }
 
   ngOnDestroy() {

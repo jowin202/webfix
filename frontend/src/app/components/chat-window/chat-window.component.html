@@ -48,7 +48,28 @@
       </select>
     </div>
     <div class="user-list">
-      <h3>Online</h3>
+      <div class="user-list-header">
+        <h3>Online</h3>
+        <button type="button" class="menu-button whisper-entry-toggle" (click)="toggleWhisperEntry()">Whisper</button>
+      </div>
+      <div class="whisper-entry" [hidden]="!showWhisperEntry">
+        <input placeholder="Username ..." class="whisper-entry-input" autocomplete="off" #whisperNameField
+          (input)="onWhisperInput(whisperNameField.value)"
+          (keydown.enter)="whisperToUsername(whisperNameField.value); whisperNameField.value='';" />
+        @if (whisperSuggestions.length > 0) {
+          <ul class="whisper-suggestions">
+            @for (user of whisperSuggestions; track user.username) {
+              <li (click)="selectWhisperSuggestion(user); whisperNameField.value='';">
+                <span class="status-dot" [class.online]="user.status === 1"></span>
+                <span [innerHTML]="user.username_html"></span>
+              </li>
+            }
+          </ul>
+        }
+        @if (whisperEntryError) {
+          <div class="whisper-entry-error">{{ whisperEntryError }}</div>
+        }
+      </div>
       <ul>
         @for (user of onlineUsers; track user) {
           <li (click)="setWhisperTarget(user.username)"><span

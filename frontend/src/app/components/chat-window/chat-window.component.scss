@@ -73,9 +73,87 @@
   margin-top: 0;
 }
 
+.user-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.whisper-entry-toggle {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.whisper-entry {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.whisper-entry-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.whisper-suggestions {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 2px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.whisper-suggestions li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.whisper-suggestions li:hover {
+  background-color: #f0f0f0;
+}
+
+.status-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #c0392b;
+}
+
+.status-dot.online {
+  background-color: #2ecc71;
+}
+
+.whisper-entry-error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #c0392b;
+}
+
 .user-list ul {
   list-style: none;
   padding: 0;
+}
+
+.user-list ul li {
+  cursor: pointer;
 }
 
 
