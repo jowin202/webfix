@@ -22,13 +22,43 @@
   margin-bottom: 5px;
 }
 
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .message-input {
   padding: 10px;
   font-size: 16px;
   width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 5px;
+}
+
+.whisper-target {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 14px;
+  white-space: nowrap;
+  background-color: #fff3cd;
+  border: 1px solid #e0c46c;
+  border-radius: 5px;
+}
+
+.whisper-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  color: inherit;
 }
 
 .user-list {

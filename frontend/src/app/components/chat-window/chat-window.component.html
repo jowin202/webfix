@@ -5,8 +5,16 @@
       <div class="messages" #messagesContainer>
         <app-stream></app-stream>
     </div>
-    <input (keydown.enter)="sendMessage(inputField.value); inputField.value='';" placeholder="Message ..."
-      class="message-input" #inputField />
+    <div class="input-row">
+      @if (whisperTarget) {
+        <div class="whisper-target">
+          <span>{{ whisperTarget }}</span>
+          <button type="button" class="whisper-close" (click)="clearWhisperTarget()">×</button>
+        </div>
+      }
+      <input (keydown.enter)="sendMessage(inputField.value); inputField.value='';" placeholder="Message ..."
+        class="message-input" #inputField />
+    </div>
     </div>
   }
 
@@ -43,7 +51,7 @@
       <h3>Online</h3>
       <ul>
         @for (user of onlineUsers; track user) {
-          <li (click)="addName(user.username)"><span
+          <li (click)="setWhisperTarget(user.username)"><span
           [innerHTML]="user.username_html"></span></li>
         }
       </ul>

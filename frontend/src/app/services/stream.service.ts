@@ -7,7 +7,6 @@ import { AuthService } from './auth.service';
 
 export type PublicMessageCategory =
   | "default"
-  | "private"
   | "statusmsg"
   | "whisper"
   | "userlogin"
@@ -128,8 +127,8 @@ export class StreamService {
 
 
         this.messages.push({
-          cat: "private",
-          username: result.username,
+          cat: "whisper",
+          username: this.html_users[result.username] || result.username,
           message: result.msg,
         });
 

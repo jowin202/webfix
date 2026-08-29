@@ -5,11 +5,6 @@
                 <span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
               </div>
             }
-            @if (message.cat == 'private') {
-              <div>
-                <i>(private)</i>&nbsp;<span [innerHTML]="message.username"></span>:&nbsp;<span [innerHTML]="message.message"></span>
-              </div>
-            }
             @if (message.cat == 'whisper') {
               <div>
                 <span [innerHTML]="message.username"></span>&nbsp;<i>whispers</i>:&nbsp;<span

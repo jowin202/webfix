@@ -113,6 +113,14 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.whisperTarget) {
+      const params = new URLSearchParams({ to_username: this.whisperTarget, message }).toString();
+      this.api.post(`/api/input/wh?${params}`, this.auth.token, {})
+        .subscribe();
+      this.whisperTarget = null;
+      return;
+    }
+
     this.api.post(`/api/input/`, this.auth.token, { "message": message, "channel_id": this.auth.channel_id })
       .subscribe(result => {
         //console.log('Server response:', result);
@@ -121,11 +129,15 @@ export class ChatWindowComponent implements OnInit, OnDestroy {
 
 
   @ViewChild('inputField') inputField!: ElementRef<HTMLInputElement>;
-  addName(name: string) {
-    if (this.inputField?.nativeElement) {
-      this.inputField.nativeElement.value += name;
-      this.inputField.nativeElement.focus();
-    }
+
+  whisperTarget: string | null = null;
+  setWhisperTarget(name: string) {
+    this.whisperTarget = name;
+    this.inputField?.nativeElement?.focus();
+  }
+  clearWhisperTarget() {
+    this.whisperTarget = null;
+    this.inputField?.nativeElement?.focus();
   }
 
   ngOnDestroy() {
