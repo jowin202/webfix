@@ -16,7 +16,11 @@ Es gibt immer nur die neueste Version:
 - **Windows (x64):** [WebfixClient-windows-x64.zip](https://github.com/<user>/webfix/releases/latest/download/WebfixClient-windows-x64.zip)
 - **macOS (Apple Silicon):** [WebfixClient-macos-arm64.dmg](https://github.com/<user>/webfix/releases/latest/download/WebfixClient-macos-arm64.dmg)
 
-Die macOS-App ist nicht signiert. Beim ersten Start deshalb per Rechtsklick → „Öffnen“ bestätigen.
+Die macOS-App ist nicht notarisiert. Nach dem ersten Startversuch unter **Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“** erlauben, oder einmalig im Terminal:
+
+```
+xattr -cr /Applications/WebfixClient.app
+```
 
 ## Server betreiben
 

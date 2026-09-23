@@ -27,8 +27,12 @@ jobs:
           mkdir build && cd build
           qmake ../WebfixClient/WebfixClient.pro CONFIG+=release CONFIG-=debug_and_release QMAKE_APPLE_DEVICE_ARCHS=arm64
           make -j"$(sysctl -n hw.ncpu)"
-          macdeployqt WebfixClient.app -dmg
-          mv WebfixClient.dmg ../WebfixClient-macos-arm64.dmg
+          macdeployqt WebfixClient.app
+          # macdeployqt invalidates the linker's ad-hoc signature; unsigned arm64 apps show up as "damaged".
+          codesign --force --deep --sign - WebfixClient.app
+          codesign --verify --deep --strict WebfixClient.app
+          mkdir dmg && mv WebfixClient.app dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname WebfixClient -srcfolder dmg -ov -format UDZO ../WebfixClient-macos-arm64.dmg
 
       - uses: actions/upload-artifact@v7
         with:
