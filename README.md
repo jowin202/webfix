@@ -27,10 +27,15 @@ cp env .env        # Werte anpassen
 docker compose up -d
 ```
 
-[docker-compose.yml](docker-compose.yml) baut das Image lokal (`build: .`). Wenn du stattdessen das fertige Image verwenden willst, ersetze die Zeile durch:
+Es gibt zwei Varianten:
 
-```yaml
-    image: ghcr.io/<user>/webfix:latest
+| Datei | Container |
+|---|---|
+| [docker-compose.yml](docker-compose.yml) | wird lokal gebaut, `./app` ist eingebunden (Entwicklung) |
+| [docker-compose.github.yml](docker-compose.github.yml) | fertiges Image `ghcr.io/<user>/webfix:latest`, bei jedem Start aktualisiert |
+
+```
+docker compose -f docker-compose.github.yml up -d
 ```
 
 Die App läuft auf Port `8000`, die Datenbank (PostgreSQL 16) speichert ihre Daten in `./pgdata`.

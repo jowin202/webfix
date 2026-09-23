@@ -1,0 +1,47 @@
+
+
+services:
+  web:
+    image: ghcr.io/jowin202/webfix:latest
+    pull_policy: always
+    container_name: chat-api
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db      
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      HMAC_KEY: ${HMAC_KEY}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      MAIL_ADDRESS: ${MAIL_ADDRESS}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      DOMAIN_NAME: ${DOMAIN_NAME}
+      PROTOCOL: ${PROTOCOL}
+      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD}
+      FEDIVERSE_URL: ${FEDIVERSE_URL}
+      FEDIVERSE_ACCESS_TOKEN: ${FEDIVERSE_ACCESS_TOKEN}
+      FIDO2_RP_ID: ${FIDO2_RP_ID}
+      FIDO2_RP_NAME: ${FIDO2_RP_NAME}
+      FIDO2_ORIGIN: ${FIDO2_ORIGIN}
+
+  db:
+    image: postgres:16
+    container_name: chat-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+volumes:
+  pgdata:
