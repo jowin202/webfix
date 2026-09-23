@@ -11,23 +11,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: type=raw,value=latest
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -35,11 +35,26 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Single manifest without attestations, so untagged versions are really obsolete.
+          provenance: false
+          sbom: false
 
       # Only keep the current image: remove the old versions that lost the "latest" tag.
-      - uses: actions/delete-package-versions@v5
-        with:
-          package-name: ${{ github.event.repository.name }}
-          package-type: container
-          delete-only-untagged-versions: true
-          min-versions-to-keep: 0
+      - name: Delete old image versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          OWNER_TYPE: ${{ github.event.repository.owner.type }}
+        run: |
+          pkg="${GITHUB_REPOSITORY#*/}"
+          pkg="${pkg,,}"
+          if [ "$OWNER_TYPE" = "Organization" ]; then
+            base="/orgs/$OWNER/packages/container/$pkg/versions"
+          else
+            base="/users/$OWNER/packages/container/$pkg/versions"
+          fi
+          gh api --paginate "$base" --jq '.[] | select(.metadata.container.tags | length == 0) | .id' |
+            while read -r id; do
+              echo "Deleting version $id"
+              gh api -X DELETE "$base/$id"
+            done

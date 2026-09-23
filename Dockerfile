@@ -1,4 +1,4 @@
-FROM node:20 AS frontend1-build
+FROM node:24 AS frontend1-build
 WORKDIR /build/frontend1
 COPY frontend/package*.json ./
 RUN npm ci
