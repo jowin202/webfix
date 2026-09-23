@@ -44,6 +44,51 @@ docker compose -f docker-compose.github.yml up -d
 
 Die App läuft auf Port `8000`, die Datenbank (PostgreSQL 16) speichert ihre Daten in `./pgdata`.
 
+### Reverse Proxy (nginx)
+
+Für HTTPS gehört ein nginx vor die App. `/api/stream/` ist eine WebSocket-Verbindung und braucht deshalb die `Upgrade`-Header und lange Timeouts.
+
+```nginx
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name chat.example.com;
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+    # WebSocket-Stream
+    location ^~ /api/stream/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+
+    # Web-Frontend und restliche API
+    location / {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Anpassen:
+
+- `server_name` und die Zertifikatspfade auf deine Domain setzen.
+- `127.0.0.1:8000` gilt, wenn nginx direkt auf dem Host läuft. Läuft nginx selbst in einem Docker-Container, trag stattdessen die Host-IP im Docker-Netz ein, meist `172.17.0.1`.
+- Wenn du in der Compose-Datei einen anderen Host-Port einträgst (z. B. `"8632:8000"`), muss derselbe Port auch in beiden `proxy_pass` stehen.
+- In der `.env` müssen `DOMAIN_NAME`, `PROTOCOL=https` und die `FIDO2_*`-Werte zur Domain passen.
+
 ## Builds (GitHub Actions)
 
 Die Builds starten nicht bei einem Commit, nur manuell: **Actions → Workflow wählen → Run workflow**.
