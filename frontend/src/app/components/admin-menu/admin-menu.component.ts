@@ -35,6 +35,7 @@ export class AdminMenuComponent {
       'announcement_registered_users',
       'announcement_team',
       'timeout_time',
+      'disconnected_timeout_time',
       'pw_recovery_token_valid_time',
       'fido2_challenge_valid_time',
       'pw_min_len'
@@ -104,6 +105,7 @@ export class AdminMenuComponent {
       'announcement_registered_users': value.announcement_registered_users,
       'announcement_team': value.announcement_team,
       'timeout_time': value.timeout_time as number,
+      'disconnected_timeout_time': value.disconnected_timeout_time as number,
       'pw_recovery_token_valid_time': value.pw_recovery_token_valid_time as number,
       'fido2_challenge_valid_time': value.fido2_challenge_valid_time as number,
       'pw_min_len': value.pw_min_len as number

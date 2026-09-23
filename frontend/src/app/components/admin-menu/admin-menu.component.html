@@ -49,6 +49,10 @@
       <input id="timeout_time" type="number" name="timeout_time" [ngModel]="menu_values.timeout_time" ngModel />
     </div>
     <div class="form-group">
+      <label for="disconnected_timeout_time">Timeout time without websocket (sec):</label>
+      <input id="disconnected_timeout_time" type="number" name="disconnected_timeout_time" [ngModel]="menu_values.disconnected_timeout_time" ngModel />
+    </div>
+    <div class="form-group">
       <label for="pw_recovery_token_valid_time">Passwort recovery link time (sec):</label>
       <input id="pw_recovery_token_valid_time" type="number" name="pw_recovery_token_valid_time" [ngModel]="menu_values.pw_recovery_token_valid_time" ngModel />
     </div>

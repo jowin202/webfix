@@ -1,0 +1,98 @@
+name: Build Qt client
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: "6.8.3"
+
+jobs:
+  macos:
+    name: macOS (Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: qtwebsockets
+          cache: true
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          qmake ../WebfixClient/WebfixClient.pro CONFIG+=release CONFIG-=debug_and_release QMAKE_APPLE_DEVICE_ARCHS=arm64
+          make -j"$(sysctl -n hw.ncpu)"
+          macdeployqt WebfixClient.app -dmg
+          mv WebfixClient.dmg ../WebfixClient-macos-arm64.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: WebfixClient-macos-arm64.dmg
+          retention-days: 1
+
+  windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          modules: qtwebsockets
+          cache: true
+
+      - name: Build
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $Deploy = "$env:GITHUB_WORKSPACE\deploy"
+          New-Item -ItemType Directory build, $Deploy | Out-Null
+          cd build
+          qmake ..\WebfixClient\WebfixClient.pro CONFIG+=release CONFIG-=debug_and_release "DESTDIR=$Deploy"
+          nmake
+          windeployqt --release --no-translations --compiler-runtime "$Deploy\WebfixClient.exe"
+          Compress-Archive -Path "$Deploy\*" -DestinationPath "$env:GITHUB_WORKSPACE\WebfixClient-windows-x64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: WebfixClient-windows-x64.zip
+          retention-days: 1
+
+  release:
+    name: Publish "latest" release
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      # Replace the previous "latest" release so only the newest build is offered.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest \
+            WebfixClient-macos-arm64.dmg \
+            WebfixClient-windows-x64.zip \
+            --target "$GITHUB_SHA" \
+            --title "Webfix Client" \
+            --notes "Build from ${GITHUB_SHA::7}" \
+            --latest

@@ -18,3 +18,11 @@ def remove_presence(channel_id: int, user_id: int):
 
 def get_presence(channel_id: int) -> Set[int]:
     return set(_channel_presence.get(channel_id, set()))
+
+
+def get_connected_user_ids() -> Set[int]:
+    """Union of every user_id with a live websocket connection, in any channel."""
+    connected: Set[int] = set()
+    for users in _channel_presence.values():
+        connected.update(users)
+    return connected

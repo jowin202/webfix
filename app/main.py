@@ -56,6 +56,7 @@ async def lifespan(app: FastAPI):
     await manager.set_setting_if_not_exists("user_verification_fediverse", True)
 
     await manager.set_setting_if_not_exists("timeout_time", 180)
+    await manager.set_setting_if_not_exists("disconnected_timeout_time", 20)
     await manager.set_setting_if_not_exists("pw_recovery_token_valid_time", 600)
     await manager.set_setting_if_not_exists("pw_min_len", 3)
     await manager.set_setting_if_not_exists("fido2_challenge_valid_time", 60)
